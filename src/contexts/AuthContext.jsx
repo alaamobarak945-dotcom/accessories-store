@@ -9,21 +9,28 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // جلب الجلسة الحالية عند تحميل الصفحة
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    // الاستماع لتغيرات Auth
+    async function loadSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user && isMounted) {
+        setUser(session.user);
+        await fetchProfile(session.user.id);
+      }
+      
+      if (isMounted) {
+        setLoading(false);
+      }
+    }
+
+    loadSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (session?.user) {
           setUser(session.user);
-          fetchProfile(session.user.id);
+          await fetchProfile(session.user.id);
         } else {
           setUser(null);
           setProfile(null);
@@ -33,6 +40,7 @@ export function AuthProvider({ children }) {
     );
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -46,9 +54,32 @@ export function AuthProvider({ children }) {
 
     if (data) {
       setProfile(data);
+      console.log('Profile loaded successfully:', data);
     } else if (error) {
       console.error('Error fetching profile:', error.message);
-      setProfile(null);
+      
+      // محاولة إنشاء profile إذا لم يكن موجودًا
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userData.user.id,
+            email: userData.user.email,
+            full_name: userData.user.user_metadata?.full_name || 'User',
+            phone: userData.user.user_metadata?.phone || 'No phone',
+            role: 'customer',
+          })
+          .select()
+          .single();
+
+        if (newProfile) {
+          setProfile(newProfile);
+          console.log('Profile created:', newProfile);
+        } else if (insertError) {
+          console.error('Error creating profile:', insertError.message);
+        }
+      }
     }
   }
 

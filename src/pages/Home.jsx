@@ -22,12 +22,25 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <span className="text-gray-600">
+                <span className="text-gray-600 text-sm">
                   Hello, {profile?.full_name || user.email}
+                  {profile?.role === 'admin' && (
+                    <span className="ml-2 bg-gray-800 text-white px-2 py-1 rounded text-xs">
+                      Admin
+                    </span>
+                  )}
                 </span>
+                {profile?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+                  className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm"
                 >
                   Logout
                 </button>
