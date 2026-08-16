@@ -82,6 +82,8 @@ export function CartProvider({ children }) {
       throw new Error('You must be logged in to add items to cart');
     }
 
+    let cartId = null;
+
     const { data: cartData, error: cartError } = await supabase
       .from('cart')
       .select('id')
@@ -98,10 +100,12 @@ export function CartProvider({ children }) {
 
         if (createError) throw createError;
 
-        cartData = newCart;
+        cartId = newCart.id;
       } else {
         throw cartError;
       }
+    } else {
+      cartId = cartData.id;
     }
 
     const { data: product, error: productError } = await supabase
@@ -117,7 +121,7 @@ export function CartProvider({ children }) {
     const { data: existingItem, error: existingError } = await supabase
       .from('cart_items')
       .select('id, quantity')
-      .eq('cart_id', cartData.id)
+      .eq('cart_id', cartId)
       .eq('product_id', productId)
       .single();
 
@@ -141,7 +145,7 @@ export function CartProvider({ children }) {
       const { error: insertError } = await supabase
         .from('cart_items')
         .insert({
-          cart_id: cartData.id,
+          cart_id: cartId,
           product_id: productId,
           quantity,
         });
