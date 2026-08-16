@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
 import { supabase } from '../lib/supabaseClient';
 
@@ -8,12 +8,16 @@ export default function Shop() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
     fetchCategories();
-    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -36,19 +40,12 @@ export default function Shop() {
       .from('products')
       .select(`
         *,
-        categories (
-          id,
-          name
-        ),
-        product_images (
-          id,
-          image_url,
-          is_primary
-        )
+        categories (id, name),
+        product_images (id, image_url, is_primary)
       `)
       .eq('is_active', true);
 
-    if (selectedCategory) {
+    if (selectedCategory !== 'all') {
       query = query.eq('category_id', selectedCategory);
     }
 
@@ -80,95 +77,121 @@ export default function Shop() {
 
   return (
     <StoreLayout>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Shop</h1>
+      {/* Compact Header */}
+      <section className="bg-black text-white py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <h1 className="text-3xl md:text-4xl font-light tracking-tight">
+            OUR COLLECTION
+          </h1>
+          <p className="text-gray-400 text-sm tracking-wide mt-1">
+            Discover premium accessories
+          </p>
+        </div>
+      </section>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+        {/* Categories */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 justify-start md:justify-center">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`px-4 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
+              selectedCategory === 'all'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            ALL
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-4 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
+                selectedCategory === category.id
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category.name.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* Search and Sort */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6 justify-between">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products..."
-            className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="border border-gray-200 rounded-full px-4 py-2 w-full md:w-72 focus:outline-none focus:border-black transition text-sm"
           />
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:border-black transition text-sm"
           >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
             <option value="price_low">Price: Low to High</option>
             <option value="price_high">Price: High to Low</option>
           </select>
         </div>
 
-        {/* Products Grid */}
+        {/* Products */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Loading products...</p>
+          <div className="text-center py-8">
+            <p className="text-gray-500">Loading...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-500">No products found.</p>
+          <div className="text-center py-8">
+            <p className="text-gray-400">No products found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/product/${product.id}`}
-                className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group"
-              >
-                <div className="aspect-square bg-gray-100 overflow-hidden">
-                  {product.product_images?.[0]?.image_url ? (
-                    <img
-                      src={product.product_images[0].image_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      No Image
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <p className="text-gray-500 text-xs mb-1">
-                    {product.categories?.name || 'Uncategorized'}
-                  </p>
-                  <h3 className="text-gray-800 font-medium mb-2 truncate">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-900 font-bold">
-                      ج.م {parseFloat(product.price).toFixed(2)}
-                    </p>
+          <>
+            <p className="text-gray-400 text-xs mb-3 tracking-wide">
+              {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {filteredProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.id}`}
+                  className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="relative aspect-square bg-gray-50 overflow-hidden">
+                    {product.product_images?.[0]?.image_url ? (
+                      <img
+                        src={product.product_images[0].image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <span className="text-4xl">✦</span>
+                      </div>
+                    )}
                     {product.stock <= 5 && (
-                      <span className="text-red-600 text-xs">
+                      <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full">
                         Only {product.stock} left
                       </span>
                     )}
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  <div className="p-3">
+                    <p className="text-gray-400 text-[10px] mb-1 tracking-wider uppercase truncate">
+                      {product.categories?.name || 'Uncategorized'}
+                    </p>
+                    <h3 className="text-gray-900 font-medium text-sm mb-1 truncate">
+                      {product.name}
+                    </h3>
+                    <p className="text-black font-bold text-sm">
+                      {parseFloat(product.price).toFixed(2)} EGP
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </StoreLayout>

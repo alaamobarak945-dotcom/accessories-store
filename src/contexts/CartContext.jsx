@@ -28,7 +28,6 @@ export function CartProvider({ children }) {
 
     if (cartError) {
       if (cartError.code === 'PGRST116') {
-        // لا توجد سلة، أنشئ واحدة
         const { data: newCart, error: createError } = await supabase
           .from('cart')
           .insert({ user_id: user.id })
@@ -83,7 +82,6 @@ export function CartProvider({ children }) {
       throw new Error('You must be logged in to add items to cart');
     }
 
-    // الحصول على السلة
     const { data: cartData, error: cartError } = await supabase
       .from('cart')
       .select('id')
@@ -92,7 +90,6 @@ export function CartProvider({ children }) {
 
     if (cartError) {
       if (cartError.code === 'PGRST116') {
-        // إنشاء سلة جديدة
         const { data: newCart, error: createError } = await supabase
           .from('cart')
           .insert({ user_id: user.id })
@@ -107,7 +104,6 @@ export function CartProvider({ children }) {
       }
     }
 
-    // التحقق من المنتج
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('stock, is_active')
@@ -118,7 +114,6 @@ export function CartProvider({ children }) {
     if (!product.is_active) throw new Error('Product is not available');
     if (product.stock < quantity) throw new Error('Not enough stock available');
 
-    // التحقق إذا كان المنتج موجودًا في السلة
     const { data: existingItem, error: existingError } = await supabase
       .from('cart_items')
       .select('id, quantity')
@@ -131,7 +126,6 @@ export function CartProvider({ children }) {
     }
 
     if (existingItem) {
-      // تحديث الكمية
       const newQuantity = existingItem.quantity + quantity;
       if (newQuantity > product.stock) {
         throw new Error('Not enough stock available');
@@ -144,7 +138,6 @@ export function CartProvider({ children }) {
 
       if (updateError) throw updateError;
     } else {
-      // إضافة عنصر جديد
       const { error: insertError } = await supabase
         .from('cart_items')
         .insert({

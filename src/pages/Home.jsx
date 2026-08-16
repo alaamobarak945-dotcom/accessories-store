@@ -1,23 +1,165 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  async function fetchData() {
+    setLoading(true);
+
+    const { data: categoriesData } = await supabase
+      .from('categories')
+      .select('*')
+      .limit(10);
+
+    setCategories(categoriesData || []);
+
+    const { data: productsData } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories (name),
+        product_images (image_url, is_primary)
+      `)
+      .eq('is_active', true)
+      .limit(8)
+      .order('created_at', { ascending: false });
+
+    setFeaturedProducts(productsData || []);
+    setLoading(false);
+  }
+
+  const filteredProducts = selectedCategory === 'all'
+    ? featuredProducts
+    : featuredProducts.filter((p) => p.category_id === selectedCategory);
+
   return (
     <StoreLayout>
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-5xl font-bold text-gray-800 mb-4">
-          Welcome to Accessories Store
-        </h1>
-        <p className="text-gray-600 text-lg mb-8">
-          Your one-stop shop for premium accessories.
-        </p>
-        <Link
-          to="/shop"
-          className="bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition text-lg"
-        >
-          Shop Now
-        </Link>
-      </div>
+      {/* Hero - Compact */}
+      <section className="bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 text-center">
+          <img
+            src="/logo.png"
+            alt="M Style"
+            className="h-20 w-auto object-contain mx-auto mb-4"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <h1 className="text-3xl md:text-5xl font-light tracking-tight mb-2">
+            M <span className="font-bold">STYLE</span>
+          </h1>
+          <p className="text-base md:text-lg text-gray-400 mb-6 tracking-wide">
+            Premium Accessories Collection
+          </p>
+          <Link
+            to="/shop"
+            className="inline-block bg-white text-black px-8 py-2.5 rounded-full text-sm tracking-widest hover:bg-gray-200 transition"
+          >
+            SHOP NOW
+          </Link>
+        </div>
+      </section>
+
+      {/* Categories Slider */}
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+        <h2 className="text-xl md:text-2xl font-light text-center mb-4 tracking-tight">
+          SHOP BY CATEGORY
+        </h2>
+        <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`px-5 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
+              selectedCategory === 'all'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-5 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
+                selectedCategory === category.id
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Products */}
+      <section className="bg-gray-50 py-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <h2 className="text-xl md:text-2xl font-light text-center mb-6 tracking-tight">
+            {selectedCategory === 'all' ? 'FEATURED PRODUCTS' : 'PRODUCTS'}
+          </h2>
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Loading...</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-center text-gray-400">No products in this category.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {filteredProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/product/${product.id}`}
+                  className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="relative aspect-square bg-gray-50 overflow-hidden">
+                    {product.product_images?.[0]?.image_url ? (
+                      <img
+                        src={product.product_images[0].image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <span className="text-4xl">✦</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-gray-400 text-[10px] mb-1 tracking-wider uppercase truncate">
+                      {product.categories?.name || 'Uncategorized'}
+                    </p>
+                    <h3 className="text-gray-900 font-medium text-sm mb-1 truncate">
+                      {product.name}
+                    </h3>
+                    <p className="text-black font-bold text-sm">
+                      {parseFloat(product.price).toFixed(2)} EGP
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+          <div className="text-center mt-6">
+            <Link
+              to="/shop"
+              className="inline-block border border-black text-black px-6 py-2 rounded-full text-xs tracking-widest hover:bg-black hover:text-white transition"
+            >
+              VIEW ALL
+            </Link>
+          </div>
+        </div>
+      </section>
     </StoreLayout>
   );
 }
