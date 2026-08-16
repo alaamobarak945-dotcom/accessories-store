@@ -157,7 +157,7 @@ export default function Shop() {
                   </h3>
                   <div className="flex items-center justify-between">
                     <p className="text-gray-900 font-bold">
-                      ${parseFloat(product.price).toFixed(2)}
+                      ج.م {parseFloat(product.price).toFixed(2)}
                     </p>
                     {product.stock <= 5 && (
                       <span className="text-red-600 text-xs">

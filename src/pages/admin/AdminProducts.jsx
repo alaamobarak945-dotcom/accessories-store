@@ -36,15 +36,8 @@ export default function AdminProducts() {
       .from('products')
       .select(`
         *,
-        categories (
-          id,
-          name
-        ),
-        product_images (
-          id,
-          image_url,
-          is_primary
-        )
+        categories (id, name),
+        product_images (id, image_url, is_primary, created_at)
       `)
       .order('created_at', { ascending: false });
 
@@ -86,7 +79,15 @@ export default function AdminProducts() {
     setStock(product.stock.toString());
     setCategoryId(product.category_id || '');
     setIsActive(product.is_active);
-    setImages(product.product_images || []);
+    
+    // ترتيب الصور: الرئيسية أولاً
+    const sortedImages = [...(product.product_images || [])].sort((a, b) => {
+      if (a.is_primary && !b.is_primary) return -1;
+      if (!a.is_primary && b.is_primary) return 1;
+      return 0;
+    });
+    
+    setImages(sortedImages);
     setIsModalOpen(true);
   }
 
@@ -117,12 +118,47 @@ export default function AdminProducts() {
 
       uploadedUrls.push({
         image_url: urlData.publicUrl,
-        is_primary: uploadedUrls.length === 0 && images.length === 0,
+        is_primary: images.length === 0 && uploadedUrls.length === 0,
       });
     }
 
     setImages([...images, ...uploadedUrls]);
     setUploading(false);
+  }
+
+  function handleSetPrimary(index) {
+    const updatedImages = images.map((img, i) => ({
+      ...img,
+      is_primary: i === index,
+    }));
+    setImages(updatedImages);
+  }
+
+  function handleRemoveImage(index) {
+    const updatedImages = images.filter((_, i) => i !== index);
+
+    // إذا حذفنا الصورة الرئيسية، نجعل الأولى هي الرئيسية
+    if (updatedImages.length > 0 && !updatedImages.some((img) => img.is_primary)) {
+      updatedImages[0].is_primary = true;
+    }
+
+    setImages(updatedImages);
+  }
+
+  function handleMoveImage(index, direction) {
+    const newImages = [...images];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newImages.length) return;
+
+    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+
+    // تحديث الرئيسية لتكون أول صورة
+    newImages.forEach((img, i) => {
+      img.is_primary = i === 0;
+    });
+
+    setImages(newImages);
   }
 
   async function handleSave(e) {
@@ -145,22 +181,28 @@ export default function AdminProducts() {
       };
 
       if (editingProduct) {
-        // تعديل المنتج
-        const { error } = await supabase
+        // ============ تعديل منتج ============
+        const { error: productError } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id);
 
-        if (error) throw error;
+        if (productError) throw productError;
 
-        // حفظ الصور الجديدة (التي لا تحتوي على id)
-        const newImages = images.filter((img) => !img.id);
+        // 1. حذف كل الصور القديمة من Database
+        const { error: deleteError } = await supabase
+          .from('product_images')
+          .delete()
+          .eq('product_id', editingProduct.id);
 
-        if (newImages.length > 0) {
-          const imageInserts = newImages.map((img) => ({
+        if (deleteError) throw deleteError;
+
+        // 2. إضافة كل الصور من جديد (القديمة والجديدة)
+        if (images.length > 0) {
+          const imageInserts = images.map((img, index) => ({
             product_id: editingProduct.id,
             image_url: img.image_url,
-            is_primary: img.is_primary,
+            is_primary: index === 0, // أول صورة = الرئيسية
           }));
 
           const { error: imageError } = await supabase
@@ -169,34 +211,21 @@ export default function AdminProducts() {
 
           if (imageError) throw imageError;
         }
-
-        // حذف الصور المحذوفة من Database
-        const existingImageIds = images.filter((img) => img.id).map((img) => img.id);
-        
-        if (existingImageIds.length > 0) {
-          const { error: deleteError } = await supabase
-            .from('product_images')
-            .delete()
-            .eq('product_id', editingProduct.id)
-            .not('id', 'in', `(${existingImageIds.join(',')})`);
-
-          if (deleteError) throw deleteError;
-        }
       } else {
-        // إضافة منتج جديد
-        const { data: newProduct, error } = await supabase
+        // ============ إضافة منتج جديد ============
+        const { data: newProduct, error: productError } = await supabase
           .from('products')
           .insert(productData)
           .select()
           .single();
 
-        if (error) throw error;
+        if (productError) throw productError;
 
         if (images.length > 0) {
-          const imageInserts = images.map((img) => ({
+          const imageInserts = images.map((img, index) => ({
             product_id: newProduct.id,
             image_url: img.image_url,
-            is_primary: img.is_primary,
+            is_primary: index === 0,
           }));
 
           const { error: imageError } = await supabase
@@ -289,6 +318,9 @@ export default function AdminProducts() {
                   Stock
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Images
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
@@ -317,7 +349,7 @@ export default function AdminProducts() {
                     {product.categories?.name || '—'}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
-                    ${parseFloat(product.price).toFixed(2)}
+                    ج.م {parseFloat(product.price).toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -329,6 +361,9 @@ export default function AdminProducts() {
                     >
                       {product.stock}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {product.product_images?.length || 0}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -398,7 +433,7 @@ export default function AdminProducts() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price ($)
+                Price (ج.م)
               </label>
               <input
                 type="number"
@@ -408,7 +443,7 @@ export default function AdminProducts() {
                 min="0"
                 step="0.01"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="49.99"
+                placeholder="99.00"
               />
             </div>
             <div>
@@ -457,27 +492,80 @@ export default function AdminProducts() {
             </label>
           </div>
 
+          {/* Product Images */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Product Images
             </label>
+
             <input
               type="file"
               accept="image/*"
               multiple
               onChange={(e) => handleUploadImages(e.target.files)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm mb-2"
             />
-            {uploading && <p className="text-gray-500 text-sm mt-1">Uploading...</p>}
+            {uploading && <p className="text-gray-500 text-sm mb-2">Uploading...</p>}
+
             {images.length > 0 && (
-              <div className="flex gap-2 mt-2 flex-wrap">
+              <div className="space-y-2">
                 {images.map((img, index) => (
-                  <img
+                  <div
                     key={index}
-                    src={img.image_url}
-                    alt="Product"
-                    className="w-16 h-16 object-cover rounded"
-                  />
+                    className="flex items-center gap-3 bg-gray-50 rounded-lg p-2"
+                  >
+                    <img
+                      src={img.image_url}
+                      alt={`Product ${index + 1}`}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">
+                        Image {index + 1}
+                        {img.is_primary && (
+                          <span className="ml-2 bg-gray-800 text-white px-2 py-0.5 rounded text-xs">
+                            Main
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveImage(index, 'up')}
+                        disabled={index === 0}
+                        className="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-30"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveImage(index, 'down')}
+                        disabled={index === images.length - 1}
+                        className="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-30"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetPrimary(index)}
+                        className={`px-2 py-1 text-xs ${
+                          img.is_primary
+                            ? 'text-gray-400'
+                            : 'text-blue-600 hover:text-blue-800'
+                        }`}
+                      >
+                        {img.is_primary ? 'Main' : 'Set Main'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="px-2 py-1 text-red-600 hover:text-red-800"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

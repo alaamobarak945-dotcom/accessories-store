@@ -31,6 +31,12 @@ export default function StoreLayout({ children }) {
               >
                 Shop
               </Link>
+              <Link
+  to="/cart"
+  className="text-gray-600 hover:text-gray-800"
+>
+  🛒 Cart
+</Link>
 
               {user ? (
                 <>
