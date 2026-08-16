@@ -145,13 +145,45 @@ export default function AdminProducts() {
       };
 
       if (editingProduct) {
+        // تعديل المنتج
         const { error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id);
 
         if (error) throw error;
+
+        // حفظ الصور الجديدة (التي لا تحتوي على id)
+        const newImages = images.filter((img) => !img.id);
+
+        if (newImages.length > 0) {
+          const imageInserts = newImages.map((img) => ({
+            product_id: editingProduct.id,
+            image_url: img.image_url,
+            is_primary: img.is_primary,
+          }));
+
+          const { error: imageError } = await supabase
+            .from('product_images')
+            .insert(imageInserts);
+
+          if (imageError) throw imageError;
+        }
+
+        // حذف الصور المحذوفة من Database
+        const existingImageIds = images.filter((img) => img.id).map((img) => img.id);
+        
+        if (existingImageIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('product_images')
+            .delete()
+            .eq('product_id', editingProduct.id)
+            .not('id', 'in', `(${existingImageIds.join(',')})`);
+
+          if (deleteError) throw deleteError;
+        }
       } else {
+        // إضافة منتج جديد
         const { data: newProduct, error } = await supabase
           .from('products')
           .insert(productData)
@@ -160,7 +192,6 @@ export default function AdminProducts() {
 
         if (error) throw error;
 
-        // إضافة الصور إذا وجدت
         if (images.length > 0) {
           const imageInserts = images.map((img) => ({
             product_id: newProduct.id,
