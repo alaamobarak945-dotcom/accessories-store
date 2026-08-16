@@ -4,6 +4,7 @@ import StoreLayout from '../layouts/StoreLayout';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { shippingRates, baseWeight, extraWeightFee, vodafoneCashNumber, whatsappNumber } from '../data/shippingRates';
 
 export default function Checkout() {
   const { cartItems, totalItems, totalPrice, clearCart } = useCart();
@@ -12,8 +13,19 @@ export default function Checkout() {
 
   const [shippingAddress, setShippingAddress] = useState('');
   const [shippingPhone, setShippingPhone] = useState(profile?.phone || '');
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [governorate, setGovernorate] = useState('');
+  const [weight, setWeight] = useState(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // حساب رسوم التوصيل
+  const selectedGovernorate = shippingRates.find((g) => g.governorate === governorate);
+  const baseFee = selectedGovernorate?.fee || 0;
+  const extraWeight = weight > baseWeight ? weight - baseWeight : 0;
+  const extraFee = extraWeight * extraWeightFee;
+  const shippingFee = baseFee + extraFee;
+  const finalTotal = totalPrice + shippingFee;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,12 +39,18 @@ export default function Checkout() {
       if (!shippingPhone.trim()) {
         throw new Error('Please enter your phone number');
       }
+      if (!governorate) {
+        throw new Error('Please select your governorate');
+      }
 
       const { data: orderId, error: orderError } = await supabase.rpc(
         'create_order',
         {
           p_shipping_address: shippingAddress,
           p_shipping_phone: shippingPhone,
+          p_payment_method: paymentMethod,
+          p_governorate: governorate,
+          p_shipping_fee: shippingFee,
         }
       );
 
@@ -91,26 +109,133 @@ export default function Checkout() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={shippingPhone}
-                onChange={(e) => setShippingPhone(e.target.value)}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="+20 100 000 0000"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={shippingPhone}
+                  onChange={(e) => setShippingPhone(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  placeholder="+20 100 000 0000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Governorate
+                </label>
+                <select
+                  value={governorate}
+                  onChange={(e) => setGovernorate(e.target.value)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                >
+                  <option value="">Select Governorate</option>
+                  {shippingRates.map((g) => (
+                    <option key={g.governorate} value={g.governorate}>
+                      {g.governorate} - {g.fee} ج.م
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-800 mb-2">Payment Method</h3>
-              <label className="flex items-center gap-2">
-                <input type="radio" checked readOnly />
-                <span>Cash on Delivery</span>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Package Weight (kg)
               </label>
+              <input
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
+                min="0"
+                step="0.5"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Base weight: {baseWeight} kg (included). Extra: {extraWeightFee} ج.م per kg.
+              </p>
+            </div>
+
+            {/* Payment Method */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Method
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <input
+                    type="radio"
+                    value="cod"
+                    checked={paymentMethod === 'cod'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800">Cash on Delivery</p>
+                    <p className="text-sm text-gray-500">Pay when you receive your order</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <input
+                    type="radio"
+                    value="vodafone_cash"
+                    checked={paymentMethod === 'vodafone_cash'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800">Vodafone Cash</p>
+                    <p className="text-sm text-gray-500">
+                      Transfer to: {vodafoneCashNumber}
+                    </p>
+                  </div>
+                </label>
+
+                {paymentMethod === 'vodafone_cash' && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 mb-2">
+                      Send payment proof via WhatsApp:
+                    </p>
+                    <a
+                      href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                        `New order - Total: ${finalTotal.toFixed(2)} ج.م`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition inline-block"
+                    >
+                      Send on WhatsApp
+                    </a>
+                  </div>
+                )}
+
+                <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <input
+                    type="radio"
+                    value="visa"
+                    checked={paymentMethod === 'visa'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800">Visa / Mastercard</p>
+                    <p className="text-sm text-gray-500">Pay securely online</p>
+                  </div>
+                </label>
+
+                {paymentMethod === 'visa' && (
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-700">
+                      You will be redirected to payment gateway.
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      (Payment gateway integration coming soon)
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
@@ -137,13 +262,15 @@ export default function Checkout() {
                 <span className="text-gray-800">ج.م {totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
-                <span className="text-gray-800">Free</span>
+                <span className="text-gray-600">Shipping Fee</span>
+                <span className="text-gray-800">
+                  {shippingFee > 0 ? `ج.م ${shippingFee.toFixed(2)}` : 'Select governorate'}
+                </span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="text-gray-800 font-medium">Total</span>
                 <span className="text-gray-900 font-bold">
-                  ج.م {totalPrice.toFixed(2)}
+                  ج.م {finalTotal.toFixed(2)}
                 </span>
               </div>
             </div>

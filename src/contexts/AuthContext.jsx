@@ -50,36 +50,17 @@ export function AuthProvider({ children }) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setProfile(data);
       console.log('Profile loaded successfully:', data);
     } else if (error) {
       console.error('Error fetching profile:', error.message);
-      
-      // محاولة إنشاء profile إذا لم يكن موجودًا
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        const { data: newProfile, error: insertError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userData.user.id,
-            email: userData.user.email,
-            full_name: userData.user.user_metadata?.full_name || 'User',
-            phone: userData.user.user_metadata?.phone || 'No phone',
-            role: 'customer',
-          })
-          .select()
-          .single();
-
-        if (newProfile) {
-          setProfile(newProfile);
-          console.log('Profile created:', newProfile);
-        } else if (insertError) {
-          console.error('Error creating profile:', insertError.message);
-        }
-      }
+      setProfile(null);
+    } else {
+      console.warn('No profile found for user:', userId);
+      setProfile(null);
     }
   }
 

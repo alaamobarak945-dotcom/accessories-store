@@ -77,6 +77,20 @@ export default function AdminOrders() {
 
   const statuses = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
 
+  function getPaymentMethodLabel(method) {
+    if (method === 'cod') return 'Cash on Delivery';
+    if (method === 'vodafone_cash') return 'Vodafone Cash';
+    if (method === 'instapay') return 'InstaPay';
+    return method || 'Cash on Delivery';
+  }
+
+  function getPaymentMethodColor(method) {
+    if (method === 'cod') return 'bg-gray-100 text-gray-700';
+    if (method === 'vodafone_cash') return 'bg-red-100 text-red-700';
+    if (method === 'instapay') return 'bg-purple-100 text-purple-700';
+    return 'bg-gray-100 text-gray-700';
+  }
+
   return (
     <AdminLayout title="Orders">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
@@ -93,7 +107,7 @@ export default function AdminOrders() {
           ))}
         </select>
 
-        <div className="flex gap-2 text-sm">
+        <div className="flex gap-2 text-sm flex-wrap">
           <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full">Pending</span>
           <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">Confirmed</span>
           <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full">Preparing</span>
@@ -140,17 +154,22 @@ export default function AdminOrders() {
                   </p>
                 </div>
 
-                <select
-                  value={order.status}
-                  onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium border-0 ${statusColors[order.status]}`}
-                >
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentMethodColor(order.payment_method)}`}>
+                    {getPaymentMethodLabel(order.payment_method)}
+                  </span>
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border-0 ${statusColors[order.status]}`}
+                  >
+                    {statuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="space-y-2 mb-4">
