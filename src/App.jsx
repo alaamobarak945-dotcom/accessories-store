@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCategories from './pages/admin/AdminCategories';
+import AdminProducts from './pages/admin/AdminProducts';
 
 function App() {
   return (
@@ -28,6 +29,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminCategories />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminRoute>
+                <AdminProducts />
               </AdminRoute>
             }
           />
