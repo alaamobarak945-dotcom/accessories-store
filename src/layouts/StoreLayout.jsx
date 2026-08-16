@@ -19,24 +19,34 @@ export default function StoreLayout({ children }) {
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <Link to="/" className="text-2xl font-bold text-gray-800">
               🛍️ Accessories Store
             </Link>
 
-            <nav className="flex items-center gap-6">
+            <nav className="flex items-center gap-4 flex-wrap">
               <Link
                 to="/shop"
                 className="text-gray-600 hover:text-gray-800"
               >
                 Shop
               </Link>
+
               <Link
-  to="/cart"
-  className="text-gray-600 hover:text-gray-800"
->
-  🛒 Cart
-</Link>
+                to="/cart"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                🛒 Cart
+              </Link>
+
+              {user && (
+                <Link
+                  to="/my-orders"
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  My Orders
+                </Link>
+              )}
 
               {user ? (
                 <>

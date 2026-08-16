@@ -10,7 +10,7 @@ export default function AdminOrders() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [statusFilter]);
 
   async function fetchOrders() {
     setLoading(true);
@@ -28,6 +28,7 @@ export default function AdminOrders() {
           id,
           quantity,
           price_at_time,
+          product_name,
           products (
             name
           )
@@ -49,10 +50,6 @@ export default function AdminOrders() {
 
     setLoading(false);
   }
-
-  useEffect(() => {
-    fetchOrders();
-  }, [statusFilter]);
 
   async function handleStatusChange(orderId, newStatus) {
     setError('');
@@ -82,7 +79,7 @@ export default function AdminOrders() {
 
   return (
     <AdminLayout title="Orders">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -95,6 +92,15 @@ export default function AdminOrders() {
             </option>
           ))}
         </select>
+
+        <div className="flex gap-2 text-sm">
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full">Pending</span>
+          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">Confirmed</span>
+          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full">Preparing</span>
+          <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full">Shipped</span>
+          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full">Delivered</span>
+          <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full">Cancelled</span>
+        </div>
       </div>
 
       {error && (
@@ -124,6 +130,9 @@ export default function AdminOrders() {
                     Customer: {order.profiles?.full_name || 'N/A'}
                   </p>
                   <p className="text-sm text-gray-500">
+                    Email: {order.profiles?.email || 'N/A'}
+                  </p>
+                  <p className="text-sm text-gray-500">
                     Phone: {order.shipping_phone}
                   </p>
                   <p className="text-sm text-gray-500">
@@ -134,7 +143,7 @@ export default function AdminOrders() {
                 <select
                   value={order.status}
                   onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[order.status]}`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border-0 ${statusColors[order.status]}`}
                 >
                   {statuses.map((status) => (
                     <option key={status} value={status}>
@@ -148,7 +157,7 @@ export default function AdminOrders() {
                 {order.order_items?.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600">
-                      {item.products?.name} x {item.quantity}
+                      {item.product_name || item.products?.name || 'Deleted Product'} x {item.quantity}
                     </span>
                     <span className="text-gray-800">
                       ج.م {(item.price_at_time * item.quantity).toFixed(2)}

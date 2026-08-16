@@ -8,14 +8,19 @@ export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('active');
 
   useEffect(() => {
-    fetchOrders();
+    if (user) {
+      fetchOrders();
+    }
   }, [user]);
 
   async function fetchOrders() {
     setLoading(true);
+    setError('');
 
     const { data, error } = await supabase
       .from('orders')
@@ -25,6 +30,7 @@ export default function MyOrders() {
           id,
           quantity,
           price_at_time,
+          product_name,
           products (
             id,
             name,
@@ -41,11 +47,32 @@ export default function MyOrders() {
 
     if (error) {
       console.error('Error fetching orders:', error.message);
+      setError('Error loading orders: ' + error.message);
     } else {
       setOrders(data || []);
     }
 
     setLoading(false);
+  }
+
+  async function handleCancelOrder(orderId) {
+    if (!confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    setError('');
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      setError('Error cancelling order: ' + error.message);
+    } else {
+      fetchOrders();
+    }
   }
 
   const statusColors = {
@@ -56,6 +83,14 @@ export default function MyOrders() {
     delivered: 'bg-green-100 text-green-700',
     cancelled: 'bg-red-100 text-red-700',
   };
+
+  const activeStatuses = ['pending', 'confirmed', 'preparing', 'shipped'];
+  const completedStatuses = ['delivered', 'cancelled'];
+
+  const activeOrders = orders.filter((order) => activeStatuses.includes(order.status));
+  const completedOrders = orders.filter((order) => completedStatuses.includes(order.status));
+
+  const displayedOrders = activeTab === 'active' ? activeOrders : completedOrders;
 
   return (
     <StoreLayout>
@@ -68,13 +103,47 @@ export default function MyOrders() {
           </div>
         )}
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-4 py-2 rounded-lg transition ${
+              activeTab === 'active'
+                ? 'bg-gray-800 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Active Orders ({activeOrders.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={`px-4 py-2 rounded-lg transition ${
+              activeTab === 'completed'
+                ? 'bg-gray-800 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Completed Orders ({completedOrders.length})
+          </button>
+        </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">Loading orders...</p>
           </div>
-        ) : orders.length === 0 ? (
+        ) : displayedOrders.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-            <p className="text-gray-500 mb-4">You have no orders yet.</p>
+            <p className="text-gray-500 mb-4">
+              {activeTab === 'active'
+                ? 'No active orders.'
+                : 'No completed orders.'}
+            </p>
             <Link
               to="/shop"
               className="bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition inline-block"
@@ -84,9 +153,9 @@ export default function MyOrders() {
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {displayedOrders.map((order) => (
               <div key={order.id} className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                   <div>
                     <p className="text-sm text-gray-500">
                       Order ID: {order.id.substring(0, 8)}...
@@ -118,7 +187,7 @@ export default function MyOrders() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm text-gray-800">
-                          {item.products?.name || 'Deleted Product'}
+                          {item.product_name || item.products?.name || 'Deleted Product'}
                         </p>
                         <p className="text-xs text-gray-500">x {item.quantity}</p>
                       </div>
@@ -129,12 +198,21 @@ export default function MyOrders() {
                   ))}
                 </div>
 
-                <div className="border-t pt-4 flex justify-between">
+                <div className="border-t pt-4 flex justify-between items-center">
                   <span className="text-gray-600">Total</span>
                   <span className="text-gray-900 font-bold">
                     ج.م {parseFloat(order.total_amount).toFixed(2)}
                   </span>
                 </div>
+
+                {order.status === 'pending' && (
+                  <button
+                    onClick={() => handleCancelOrder(order.id)}
+                    className="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition"
+                  >
+                    Cancel Order
+                  </button>
+                )}
               </div>
             ))}
           </div>

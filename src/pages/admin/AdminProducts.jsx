@@ -13,7 +13,6 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Form State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -80,7 +79,6 @@ export default function AdminProducts() {
     setCategoryId(product.category_id || '');
     setIsActive(product.is_active);
     
-    // ترتيب الصور: الرئيسية أولاً
     const sortedImages = [...(product.product_images || [])].sort((a, b) => {
       if (a.is_primary && !b.is_primary) return -1;
       if (!a.is_primary && b.is_primary) return 1;
@@ -137,7 +135,6 @@ export default function AdminProducts() {
   function handleRemoveImage(index) {
     const updatedImages = images.filter((_, i) => i !== index);
 
-    // إذا حذفنا الصورة الرئيسية، نجعل الأولى هي الرئيسية
     if (updatedImages.length > 0 && !updatedImages.some((img) => img.is_primary)) {
       updatedImages[0].is_primary = true;
     }
@@ -153,7 +150,6 @@ export default function AdminProducts() {
 
     [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
 
-    // تحديث الرئيسية لتكون أول صورة
     newImages.forEach((img, i) => {
       img.is_primary = i === 0;
     });
@@ -181,7 +177,6 @@ export default function AdminProducts() {
       };
 
       if (editingProduct) {
-        // ============ تعديل منتج ============
         const { error: productError } = await supabase
           .from('products')
           .update(productData)
@@ -189,7 +184,6 @@ export default function AdminProducts() {
 
         if (productError) throw productError;
 
-        // 1. حذف كل الصور القديمة من Database
         const { error: deleteError } = await supabase
           .from('product_images')
           .delete()
@@ -197,12 +191,11 @@ export default function AdminProducts() {
 
         if (deleteError) throw deleteError;
 
-        // 2. إضافة كل الصور من جديد (القديمة والجديدة)
         if (images.length > 0) {
           const imageInserts = images.map((img, index) => ({
             product_id: editingProduct.id,
             image_url: img.image_url,
-            is_primary: index === 0, // أول صورة = الرئيسية
+            is_primary: index === 0,
           }));
 
           const { error: imageError } = await supabase
@@ -212,7 +205,6 @@ export default function AdminProducts() {
           if (imageError) throw imageError;
         }
       } else {
-        // ============ إضافة منتج جديد ============
         const { data: newProduct, error: productError } = await supabase
           .from('products')
           .insert(productData)
@@ -258,7 +250,11 @@ export default function AdminProducts() {
       .eq('id', product.id);
 
     if (error) {
-      setError('Error deleting product: ' + error.message);
+      if (error.message.includes('violates foreign key')) {
+        setError('Cannot delete this product because it is linked to active orders. Wait until orders are delivered or cancelled.');
+      } else {
+        setError('Error deleting product: ' + error.message);
+      }
     } else {
       fetchProducts();
     }
@@ -492,7 +488,6 @@ export default function AdminProducts() {
             </label>
           </div>
 
-          {/* Product Images */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Product Images

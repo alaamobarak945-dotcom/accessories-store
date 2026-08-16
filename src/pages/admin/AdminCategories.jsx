@@ -51,12 +51,33 @@ export default function AdminCategories() {
     setError('');
     setSaving(true);
 
-    const slug = name
+    // توليد slug يدعم العربية
+    let slug = name
+      .trim()
       .toLowerCase()
       .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+      .replace(/[^a-z0-9\u0600-\u06FF-]/g, '');
+
+    // إذا كان slug فارغًا (اسم عربي بالكامل)، استخدم معرفًا فريدًا
+    if (!slug) {
+      slug = 'category-' + Date.now().toString(36);
+    }
 
     try {
+      // التحقق من وجود slug مكرر
+      const { data: existingCategory } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', slug)
+        .single();
+
+      if (
+        existingCategory &&
+        (!editingCategory || existingCategory.id !== editingCategory.id)
+      ) {
+        slug = slug + '-' + Date.now().toString(36);
+      }
+
       if (editingCategory) {
         const { error } = await supabase
           .from('categories')
@@ -75,7 +96,11 @@ export default function AdminCategories() {
       setIsModalOpen(false);
       fetchCategories();
     } catch (err) {
-      setError('Error saving category: ' + err.message);
+      if (err.message.includes('duplicate key')) {
+        setError('A category with this name already exists');
+      } else {
+        setError('Error saving category: ' + err.message);
+      }
     } finally {
       setSaving(false);
     }
