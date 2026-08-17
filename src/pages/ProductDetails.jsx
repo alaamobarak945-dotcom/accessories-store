@@ -95,7 +95,7 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <StoreLayout>
-        <div className="text-center py-8">
+        <div className="text-center py-12">
           <p className="text-gray-400">Loading...</p>
         </div>
       </StoreLayout>
@@ -105,7 +105,7 @@ export default function ProductDetails() {
   if (!product) {
     return (
       <StoreLayout>
-        <div className="text-center py-8">
+        <div className="text-center py-12">
           <p className="text-gray-500">Product not found.</p>
           <Link to="/shop" className="text-black underline mt-2 inline-block text-sm">
             Back to Shop
@@ -120,7 +120,7 @@ export default function ProductDetails() {
 
   return (
     <StoreLayout>
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <Link to="/shop" className="text-gray-500 hover:text-black text-sm tracking-wide">
           ← BACK TO SHOP
         </Link>
@@ -129,43 +129,45 @@ export default function ProductDetails() {
           <div className="mt-4 text-center text-sm tracking-wide">{cartMessage}</div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-4">
-          {/* Images - Smaller */}
-          <div className="max-w-sm mx-auto w-full md:max-w-none">
-            <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden max-h-[350px] md:max-h-[400px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mt-6">
+          {/* Images Section */}
+          <div className="w-full">
+            {/* Main Image */}
+            <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden w-full max-w-[500px] mx-auto md:max-w-none">
               {selectedImage ? (
-                <img src={selectedImage} alt={product.name} className="w-full h-full object-contain" />
+                <img src={selectedImage} alt={product.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-300">
-                  <span className="text-4xl">✦</span>
+                  <span className="text-6xl">✦</span>
                 </div>
               )}
 
               {images.length > 1 && (
                 <>
-                  <button onClick={goToPrevImage} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center text-black shadow-lg transition z-10 text-sm">
+                  <button onClick={goToPrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 flex items-center justify-center text-black shadow-lg transition z-10 text-lg">
                     ❮
                   </button>
-                  <button onClick={goToNextImage} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center text-black shadow-lg transition z-10 text-sm">
+                  <button onClick={goToNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-12 h-12 flex items-center justify-center text-black shadow-lg transition z-10 text-lg">
                     ❯
                   </button>
                 </>
               )}
 
               {images.length > 1 && (
-                <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-0.5 rounded-full text-[10px]">
+                <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs">
                   {selectedImageIndex + 1} / {images.length}
                 </div>
               )}
             </div>
 
+            {/* Thumbnails */}
             {images.length > 1 && (
-              <div className="flex gap-2 mt-2 overflow-x-auto pb-2 justify-center">
+              <div className="flex gap-3 mt-4 justify-center md:justify-start flex-wrap">
                 {images.map((img, index) => (
                   <button
                     key={img.id || index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 transition ${
+                    className={`w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 flex-shrink-0 transition ${
                       selectedImageIndex === index ? 'border-black' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -176,26 +178,26 @@ export default function ProductDetails() {
             )}
           </div>
 
-          {/* Details */}
-          <div>
-            <p className="text-gray-400 text-xs tracking-widest uppercase mb-1">
+          {/* Details Section */}
+          <div className="w-full">
+            <p className="text-gray-400 text-xs tracking-widest uppercase mb-2">
               {product.categories?.name || 'Uncategorized'}
             </p>
-            <h1 className="text-xl md:text-2xl font-light mb-2">{product.name}</h1>
-            <p className="text-xl font-bold text-black mb-3">
+            <h1 className="text-2xl md:text-4xl font-light mb-3">{product.name}</h1>
+            <p className="text-2xl md:text-3xl font-bold text-black mb-6">
               {parseFloat(product.price).toFixed(2)} EGP
             </p>
 
-            {/* Color Selection - Only if has_colors */}
+            {/* Color Selection */}
             {product.has_colors && (
-              <div className="mb-3">
-                <h3 className="text-xs font-medium text-gray-900 mb-2 tracking-widest uppercase">Color</h3>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 tracking-widest uppercase">Color</h3>
+                <div className="flex flex-wrap gap-2">
                   {colors.map((color) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] tracking-wide border transition ${
+                      className={`px-4 py-2 rounded-full text-xs tracking-wide border transition ${
                         selectedColor === color
                           ? 'bg-black text-white border-black'
                           : 'border-gray-200 text-gray-600 hover:border-black'
@@ -208,62 +210,66 @@ export default function ProductDetails() {
               </div>
             )}
 
-            {/* Notes - Always visible */}
-            <div className="mb-3">
-              <h3 className="text-xs font-medium text-gray-900 mb-2 tracking-widest uppercase">Notes</h3>
+            {/* Notes */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-900 mb-3 tracking-widest uppercase">Notes</h3>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                rows={2}
+                rows={3}
                 placeholder="Add any special requests..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-black transition"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
               />
             </div>
 
-            {product.description && (
-              <div className="mb-3">
-                <h3 className="text-xs font-medium text-gray-900 mb-1 tracking-widest uppercase">Description</h3>
-                <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{product.description}</p>
-              </div>
-            )}
-
-            {product.specifications && (
-              <div className="mb-3">
-                <h3 className="text-xs font-medium text-gray-900 mb-1 tracking-widest uppercase">Specifications</h3>
-                <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                  {product.specifications.split('\n').map((line, index) => (
-                    <p key={index} className="mb-0.5">{line}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mb-3">
-              <span className={`px-3 py-1 rounded-full text-[11px] tracking-wide ${
+            {/* Stock & Quantity */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <span className={`px-4 py-2 rounded-full text-xs tracking-wide ${
                 product.stock > 0 ? 'bg-gray-100 text-gray-800' : 'bg-red-50 text-red-600'
               }`}>
                 {product.stock > 0 ? `IN STOCK (${product.stock})` : 'OUT OF STOCK'}
               </span>
+
+              {product.stock > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-600 tracking-wide">QUANTITY</span>
+                  <div className="flex items-center border border-gray-200 rounded-full">
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-2 text-gray-600 hover:text-black text-lg">-</button>
+                    <span className="px-5 py-2 font-medium text-sm">{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="px-4 py-2 text-gray-600 hover:text-black text-lg">+</button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {product.stock > 0 && (
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs text-gray-600 tracking-wide">QUANTITY</span>
-                <div className="flex items-center border border-gray-200 rounded-full">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-1 text-gray-600 hover:text-black">-</button>
-                  <span className="px-4 py-1 font-medium text-sm">{quantity}</span>
-                  <button onClick={() => setQuantity(Math.min(product.stock, quantity + 1))} className="px-3 py-1 text-gray-600 hover:text-black">+</button>
-                </div>
-              </div>
-            )}
-
+            {/* Add to Cart Button */}
             <button
               disabled={product.stock === 0 || addingToCart}
               onClick={handleAddToCart}
-              className="w-full bg-black text-white py-3 rounded-full text-xs tracking-widest hover:bg-gray-800 transition disabled:opacity-50"
+              className="w-full bg-black text-white py-4 rounded-full text-sm tracking-widest hover:bg-gray-800 transition disabled:opacity-50 mb-6"
             >
               {addingToCart ? 'ADDING...' : 'ADD TO CART'}
             </button>
+
+            {/* Description */}
+            {product.description && (
+              <div className="border-t border-gray-100 pt-6 mb-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 tracking-widest uppercase">Description</h3>
+                <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{product.description}</p>
+              </div>
+            )}
+
+            {/* Specifications */}
+            {product.specifications && (
+              <div className="border-t border-gray-100 pt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-3 tracking-widest uppercase">Specifications</h3>
+                <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                  {product.specifications.split('\n').map((line, index) => (
+                    <p key={index} className="mb-1">{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
