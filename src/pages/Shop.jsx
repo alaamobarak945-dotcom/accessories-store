@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
 import { supabase } from '../lib/supabaseClient';
 import ProductCard from '../components/ProductCard';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Shop() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,14 +57,13 @@ export default function Shop() {
   return (
     <StoreLayout>
       <section className="bg-black text-white py-8">
-        <div className="max-w-full px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-light tracking-tight">OUR COLLECTION</h1>
-          <p className="text-gray-400 text-sm mt-1">Discover premium accessories</p>
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-light tracking-tight">{t('ourCollection')}</h1>
+          <p className="text-gray-400 text-sm mt-1">{t('discoverPremium')}</p>
         </div>
       </section>
 
-      <div className="w-full px-4 md:px-6 py-6">
-        {/* Categories */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 justify-start md:justify-center">
           <button
             onClick={() => setSelectedCategory('all')}
@@ -70,7 +71,7 @@ export default function Shop() {
               selectedCategory === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            ALL
+            {t('all').toUpperCase()}
           </button>
           {categories.map((category) => (
             <button
@@ -85,13 +86,12 @@ export default function Shop() {
           ))}
         </div>
 
-        {/* Search & Sort */}
-        <div className="flex flex-col md:flex-row gap-3 mb-4 justify-between max-w-2xl mx-auto md:mx-0">
+        <div className="flex flex-col md:flex-row gap-3 mb-4 justify-between">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
+            placeholder={t('search')}
             className="border border-gray-200 rounded-full px-4 py-2 w-full md:w-72 focus:outline-none focus:border-black transition text-sm"
           />
           <select
@@ -99,17 +99,17 @@ export default function Shop() {
             onChange={(e) => setSortBy(e.target.value)}
             className="border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:border-black transition text-sm"
           >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="price_low">Price: Low to High</option>
-            <option value="price_high">Price: High to Low</option>
+            <option value="newest">{t('newest')}</option>
+            <option value="oldest">{t('oldest')}</option>
+            <option value="price_low">{t('priceLow')}</option>
+            <option value="price_high">{t('priceHigh')}</option>
           </select>
         </div>
 
         {loading ? (
-          <div className="text-center py-8"><p className="text-gray-400 text-sm">Loading...</p></div>
+          <div className="text-center py-8"><p className="text-gray-400 text-sm">{t('loading')}</p></div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-8"><p className="text-gray-400 text-sm">No products found.</p></div>
+          <div className="text-center py-8"><p className="text-gray-400 text-sm">{t('noProductsFound')}</p></div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
             {filteredProducts.map((product, index) => (

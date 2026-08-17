@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
 import { supabase } from '../lib/supabaseClient';
 import ProductCard from '../components/ProductCard';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Home() {
+  const { t } = useLanguage();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +47,8 @@ export default function Home() {
 
   return (
     <StoreLayout>
-      {/* Hero */}
       <section className="bg-black text-white">
-        <div className="w-full px-4 md:px-8 py-10 md:py-14 text-center">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 text-center">
           <img
             src="/logo.png"
             alt="M Style"
@@ -58,21 +59,20 @@ export default function Home() {
             M <span className="font-bold">STYLE</span>
           </h1>
           <p className="text-base md:text-lg text-gray-400 mb-6 tracking-wide">
-            Premium Accessories Collection
+            {t('heroSubtitle')}
           </p>
           <Link
             to="/shop"
             className="inline-block bg-white text-black px-8 py-2.5 rounded-full text-sm tracking-widest hover:bg-gray-200 transition"
           >
-            SHOP NOW
+            {t('shopNow')}
           </Link>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="w-full px-4 md:px-6 py-8">
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <h2 className="text-xl md:text-2xl font-light text-center mb-4 tracking-tight">
-          SHOP BY CATEGORY
+          {t('shopByCategory')}
         </h2>
         <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center">
           <button
@@ -81,7 +81,7 @@ export default function Home() {
               selectedCategory === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            All
+            {t('all')}
           </button>
           {categories.map((category) => (
             <button
@@ -97,18 +97,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Products */}
       <section className="bg-gray-50 py-10">
-        <div className="w-full px-4 md:px-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <h2 className="text-xl md:text-2xl font-light text-center mb-6 tracking-tight">
-            {selectedCategory === 'all' ? 'FEATURED PRODUCTS' : 'PRODUCTS'}
+            {selectedCategory === 'all' ? t('featuredProducts') : t('shop')}
           </h2>
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400">Loading...</p>
-            </div>
+            <div className="text-center py-8"><p className="text-gray-400">{t('loading')}</p></div>
           ) : filteredProducts.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm">No products.</p>
+            <p className="text-center text-gray-400 text-sm">{t('noProducts')}</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
               {filteredProducts.map((product, index) => (
@@ -121,7 +118,7 @@ export default function Home() {
               to="/shop"
               className="inline-block border border-black text-black px-6 py-2 rounded-full text-xs tracking-widest hover:bg-black hover:text-white transition"
             >
-              VIEW ALL
+              {t('viewAll')}
             </Link>
           </div>
         </div>
