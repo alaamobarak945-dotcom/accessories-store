@@ -52,6 +52,7 @@ export default function AdminLayout({ children, title }) {
             ×
           </button>
         </div>
+
         <nav className="p-3 space-y-1">
           {menuItems.map((item) => (
             <Link
@@ -64,7 +65,18 @@ export default function AdminLayout({ children, title }) {
               <span>{item.label}</span>
             </Link>
           ))}
+
+          {/* View Store Button */}
+          <Link
+            to="/"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white hover:text-black transition text-sm tracking-wide border-t border-gray-800 mt-3 pt-3"
+          >
+            <span>🏪</span>
+            <span>View Store</span>
+          </Link>
         </nav>
+
         <div className="p-4 border-t border-gray-800 absolute bottom-0 w-64 bg-black">
           <div className="text-gray-300 text-sm mb-2">{profile?.full_name || 'Admin'}</div>
           <button
@@ -84,12 +96,18 @@ export default function AdminLayout({ children, title }) {
             ☰
           </button>
           <h1 className="text-base font-semibold text-black tracking-wide">{title}</h1>
-          <div className="w-8"></div>
+          <Link to="/" className="text-sm text-gray-600 hover:text-black">🏪</Link>
         </header>
 
         {/* Desktop Header */}
-        <header className="bg-white border-b px-8 py-4 hidden md:block">
+        <header className="bg-white border-b px-8 py-4 hidden md:flex items-center justify-between">
           <h1 className="text-2xl font-light text-black tracking-wide">{title}</h1>
+          <Link
+            to="/"
+            className="text-sm text-gray-600 hover:text-black tracking-wide border border-gray-200 rounded-full px-4 py-1.5 hover:border-black transition"
+          >
+            🏪 View Store
+          </Link>
         </header>
 
         <main className="p-3 md:p-6">{children}</main>
