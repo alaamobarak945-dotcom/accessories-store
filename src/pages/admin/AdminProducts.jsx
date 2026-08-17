@@ -15,6 +15,7 @@ export default function AdminProducts() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [specifications, setSpecifications] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -46,7 +47,7 @@ export default function AdminProducts() {
 
   function handleAdd() {
     setEditingProduct(null);
-    setName(''); setDescription(''); setPrice(''); setStock(''); setCategoryId('');
+    setName(''); setDescription(''); setSpecifications(''); setPrice(''); setStock(''); setCategoryId('');
     setIsActive(true); setImages([]);
     setIsModalOpen(true);
   }
@@ -55,6 +56,7 @@ export default function AdminProducts() {
     setEditingProduct(product);
     setName(product.name);
     setDescription(product.description || '');
+    setSpecifications(product.specifications || '');
     setPrice(product.price.toString());
     setStock(product.stock.toString());
     setCategoryId(product.category_id || '');
@@ -97,7 +99,9 @@ export default function AdminProducts() {
     try {
       if (!name || !price || !stock) throw new Error('Name, price, and stock are required');
       const productData = {
-        name, description,
+        name,
+        description,
+        specifications,
         price: parseFloat(price),
         stock: parseInt(stock),
         category_id: categoryId || null,
@@ -192,20 +196,34 @@ export default function AdminProducts() {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingProduct ? 'Edit Product' : 'Add Product'}>
         <form onSubmit={handleSave} className="space-y-3 max-h-[70vh] overflow-y-auto">
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Product Name" className="w-full border rounded-lg px-3 py-2 text-sm" />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Description" className="w-full border rounded-lg px-3 py-2 text-sm" />
+          
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Description</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder={"Product description...\n- First line\n- Second line"} className="w-full border rounded-lg px-3 py-2 text-sm" />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Specifications</label>
+            <textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={4} placeholder={"- Material: Gold\n- Size: 18 inch\n- Color: Silver\n- Weight: 50g"} className="w-full border rounded-lg px-3 py-2 text-sm" />
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" step="0.01" placeholder="Price" className="border rounded-lg px-3 py-2 text-sm" />
             <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} required min="0" placeholder="Stock" className="border rounded-lg px-3 py-2 text-sm" />
           </div>
+          
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
             <option value="">No Category</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             Active
           </label>
+          
           <input type="file" accept="image/*" multiple onChange={(e) => handleUploadImages(e.target.files)} className="text-sm" />
+          
           {images.length > 0 && (
             <div className="space-y-1">
               {images.map((img, i) => (
@@ -218,6 +236,7 @@ export default function AdminProducts() {
               ))}
             </div>
           )}
+          
           <div className="flex gap-2">
             <button type="submit" disabled={saving || uploading} className="flex-1 bg-gray-800 text-white py-2 rounded-lg text-sm disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}

@@ -14,22 +14,39 @@ export default function AdminOrders() {
 
   async function fetchOrders() {
     setLoading(true);
+
     let query = supabase
       .from('orders')
-      .select(`*, profiles (full_name, email, phone), order_items (id, quantity, price_at_time, product_name, products (name))`)
+      .select(`
+        *,
+        profiles (full_name, email, phone),
+        order_items (id, quantity, price_at_time, product_name, color, notes, products (name))
+      `)
       .order('created_at', { ascending: false });
 
-    if (statusFilter) query = query.eq('status', statusFilter);
+    if (statusFilter) {
+      query = query.eq('status', statusFilter);
+    }
 
     const { data, error } = await query;
-    if (error) setError('Error: ' + error.message);
-    else setOrders(data || []);
+
+    if (error) {
+      setError('Error loading orders: ' + error.message);
+    } else {
+      setOrders(data || []);
+    }
+
     setLoading(false);
   }
 
   async function handleStatusChange(orderId, newStatus) {
-    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    fetchOrders();
+    setError('');
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    if (error) {
+      setError('Error updating order: ' + error.message);
+    } else {
+      fetchOrders();
+    }
   }
 
   const statusColors = {
@@ -63,6 +80,10 @@ export default function AdminOrders() {
         </select>
       </div>
 
+      {error && (
+        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
+      )}
+
       {loading ? (
         <div className="text-center py-8"><p className="text-gray-400 text-sm">Loading...</p></div>
       ) : orders.length === 0 ? (
@@ -92,11 +113,23 @@ export default function AdminOrders() {
                 </div>
               </div>
 
-              <div className="space-y-1 mb-3">
+              <div className="space-y-2 mb-3">
                 {order.order_items?.map((item) => (
-                  <div key={item.id} className="flex justify-between text-xs">
-                    <span className="text-gray-600">{item.product_name || item.products?.name || 'Deleted'} x {item.quantity}</span>
-                    <span className="text-black font-medium">ج.م {(item.price_at_time * item.quantity).toFixed(2)}</span>
+                  <div key={item.id} className="text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        {item.product_name || item.products?.name || 'Deleted'} x {item.quantity}
+                      </span>
+                      <span className="text-black font-medium">
+                        ج.م {(item.price_at_time * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                    {item.color && (
+                      <p className="text-gray-500 mt-0.5">Color: {item.color}</p>
+                    )}
+                    {item.notes && (
+                      <p className="text-gray-500 mt-0.5">Notes: {item.notes}</p>
+                    )}
                   </div>
                 ))}
               </div>

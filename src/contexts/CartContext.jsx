@@ -53,6 +53,8 @@ export function CartProvider({ children }) {
       .select(`
         id,
         quantity,
+        color,
+        notes,
         products (
           id,
           name,
@@ -77,7 +79,7 @@ export function CartProvider({ children }) {
     setLoading(false);
   }
 
-  async function addToCart(productId, quantity) {
+  async function addToCart(productId, quantity, color = '', notes = '') {
     if (!user) {
       throw new Error('You must be logged in to add items to cart');
     }
@@ -99,7 +101,6 @@ export function CartProvider({ children }) {
           .single();
 
         if (createError) throw createError;
-
         cartId = newCart.id;
       } else {
         throw cartError;
@@ -137,7 +138,7 @@ export function CartProvider({ children }) {
 
       const { error: updateError } = await supabase
         .from('cart_items')
-        .update({ quantity: newQuantity })
+        .update({ quantity: newQuantity, color, notes })
         .eq('id', existingItem.id);
 
       if (updateError) throw updateError;
@@ -148,6 +149,8 @@ export function CartProvider({ children }) {
           cart_id: cartId,
           product_id: productId,
           quantity,
+          color,
+          notes,
         });
 
       if (insertError) throw insertError;
