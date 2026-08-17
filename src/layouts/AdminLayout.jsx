@@ -27,7 +27,7 @@ export default function AdminLayout({ children, title }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar Overlay for Mobile */}
+      {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
@@ -41,12 +41,18 @@ export default function AdminLayout({ children, title }) {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-4 border-b border-gray-800">
-          <Link to="/admin" className="text-xl font-bold text-white">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+          <Link to="/admin" className="text-lg font-bold text-white">
             🛍️ M STYLE
           </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-gray-400 hover:text-white md:hidden text-xl"
+          >
+            ×
+          </button>
         </div>
-        <nav className="p-4 space-y-1">
+        <nav className="p-3 space-y-1">
           {menuItems.map((item) => (
             <Link
               key={item.path}
@@ -60,9 +66,7 @@ export default function AdminLayout({ children, title }) {
           ))}
         </nav>
         <div className="p-4 border-t border-gray-800 absolute bottom-0 w-64 bg-gray-900">
-          <div className="text-gray-300 text-sm mb-2">
-            {profile?.full_name || 'Admin'}
-          </div>
+          <div className="text-gray-300 text-sm mb-2">{profile?.full_name || 'Admin'}</div>
           <button
             onClick={handleLogout}
             className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
@@ -76,13 +80,10 @@ export default function AdminLayout({ children, title }) {
       <div className="md:ml-64">
         {/* Mobile Header */}
         <header className="bg-white shadow-sm px-4 py-3 flex items-center justify-between md:hidden sticky top-0 z-20">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-2xl text-gray-700"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="text-2xl text-gray-700">
             ☰
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
+          <h1 className="text-base font-semibold text-gray-800">{title}</h1>
           <div className="w-8"></div>
         </header>
 
@@ -91,7 +92,7 @@ export default function AdminLayout({ children, title }) {
           <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
         </header>
 
-        <main className="p-4 md:p-8">{children}</main>
+        <main className="p-3 md:p-8">{children}</main>
       </div>
     </div>
   );

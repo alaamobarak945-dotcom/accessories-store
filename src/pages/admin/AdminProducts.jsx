@@ -143,63 +143,49 @@ export default function AdminProducts() {
 
   return (
     <AdminLayout title="Products">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-3">
+      <div className="flex flex-col gap-2 mb-4">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search products..."
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none text-sm"
+          placeholder="Search..."
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none"
         />
-        <button onClick={handleAdd} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm w-full md:w-auto">
+        <button onClick={handleAdd} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
           + Add Product
         </button>
       </div>
 
-      {error && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>}
+      {error && <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg mb-3 text-xs">{error}</div>}
 
       {loading ? (
-        <div className="text-center py-12"><p className="text-gray-500">Loading products...</p></div>
+        <div className="text-center py-8"><p className="text-gray-500 text-sm">Loading...</p></div>
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm"><p className="text-gray-500">No products found.</p></div>
+        <div className="text-center py-8 bg-white rounded-xl shadow-sm"><p className="text-gray-500 text-sm">No products.</p></div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table className="w-full min-w-[600px]">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {product.product_images?.[0]?.image_url && (
-                        <img src={product.product_images[0].image_url} alt="" className="w-8 h-8 object-cover rounded" />
-                      )}
-                      <span className="text-sm font-medium text-gray-800 truncate max-w-[150px]">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm">ج.م {parseFloat(product.price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm">{product.stock}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded text-[10px] ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                      {product.is_active ? 'Active' : 'Hidden'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-800 mr-3 text-sm">Edit</button>
-                    <button onClick={() => handleDelete(product)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3">
+              <div className="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
+                {product.product_images?.[0]?.image_url ? (
+                  <img src={product.product_images[0].image_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">✦</div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                <p className="text-xs text-gray-500">ج.م {parseFloat(product.price).toFixed(2)} · Stock: {product.stock}</p>
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                  {product.is_active ? 'Active' : 'Hidden'}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => handleEdit(product)} className="text-blue-600 text-xs">Edit</button>
+                <button onClick={() => handleDelete(product)} className="text-red-600 text-xs">Delete</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -207,7 +193,7 @@ export default function AdminProducts() {
         <form onSubmit={handleSave} className="space-y-3 max-h-[70vh] overflow-y-auto">
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Product Name" className="w-full border rounded-lg px-3 py-2 text-sm" />
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Description" className="w-full border rounded-lg px-3 py-2 text-sm" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" step="0.01" placeholder="Price" className="border rounded-lg px-3 py-2 text-sm" />
             <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} required min="0" placeholder="Stock" className="border rounded-lg px-3 py-2 text-sm" />
           </div>
