@@ -27,7 +27,6 @@ export default function AdminLayout({ children, title }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
@@ -35,7 +34,6 @@ export default function AdminLayout({ children, title }) {
         ></div>
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-black z-40 transform transition-transform duration-300 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -53,7 +51,7 @@ export default function AdminLayout({ children, title }) {
           </button>
         </div>
 
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           {menuItems.map((item) => (
             <Link
               key={item.path}
@@ -66,7 +64,6 @@ export default function AdminLayout({ children, title }) {
             </Link>
           ))}
 
-          {/* View Store Button */}
           <Link
             to="/"
             onClick={() => setSidebarOpen(false)}
@@ -88,9 +85,7 @@ export default function AdminLayout({ children, title }) {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="md:ml-64">
-        {/* Mobile Header */}
         <header className="bg-white border-b px-4 py-3 flex items-center justify-between md:hidden sticky top-0 z-20">
           <button onClick={() => setSidebarOpen(true)} className="text-2xl text-black">
             ☰
@@ -99,7 +94,6 @@ export default function AdminLayout({ children, title }) {
           <Link to="/" className="text-sm text-gray-600 hover:text-black">🏪</Link>
         </header>
 
-        {/* Desktop Header */}
         <header className="bg-white border-b px-8 py-4 hidden md:flex items-center justify-between">
           <h1 className="text-2xl font-light text-black tracking-wide">{title}</h1>
           <Link
