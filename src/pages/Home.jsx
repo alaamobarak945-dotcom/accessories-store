@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
 import { supabase } from '../lib/supabaseClient';
+import ProductCard from '../components/ProductCard';
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -44,16 +45,14 @@ export default function Home() {
 
   return (
     <StoreLayout>
-      {/* Hero - Compact */}
+      {/* Hero */}
       <section className="bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 text-center">
           <img
             src="/logo.png"
             alt="M Style"
             className="h-20 w-auto object-contain mx-auto mb-4"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
           <h1 className="text-3xl md:text-5xl font-light tracking-tight mb-2">
             M <span className="font-bold">STYLE</span>
@@ -70,7 +69,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Slider */}
+      {/* Categories */}
       <section className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         <h2 className="text-xl md:text-2xl font-light text-center mb-4 tracking-tight">
           SHOP BY CATEGORY
@@ -79,9 +78,7 @@ export default function Home() {
           <button
             onClick={() => setSelectedCategory('all')}
             className={`px-5 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
-              selectedCategory === 'all'
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              selectedCategory === 'all' ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             All
@@ -91,9 +88,7 @@ export default function Home() {
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
               className={`px-5 py-1.5 rounded-full text-xs tracking-wide whitespace-nowrap transition ${
-                selectedCategory === category.id
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                selectedCategory === category.id ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {category.name}
@@ -110,43 +105,14 @@ export default function Home() {
           </h2>
           {loading ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Loading...</p>
+              <p className="text-gray-400">Loading...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <p className="text-center text-gray-400">No products in this category.</p>
+            <p className="text-center text-gray-400 text-sm">No products.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {filteredProducts.map((product) => (
-                <Link
-                  key={product.id}
-                  to={`/product/${product.id}`}
-                  className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="relative aspect-square bg-gray-50 overflow-hidden">
-                    {product.product_images?.[0]?.image_url ? (
-                      <img
-                        src={product.product_images[0].image_url}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <span className="text-4xl">✦</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-gray-400 text-[10px] mb-1 tracking-wider uppercase truncate">
-                      {product.categories?.name || 'Uncategorized'}
-                    </p>
-                    <h3 className="text-gray-900 font-medium text-sm mb-1 truncate">
-                      {product.name}
-                    </h3>
-                    <p className="text-black font-bold text-sm">
-                      {parseFloat(product.price).toFixed(2)} EGP
-                    </p>
-                  </div>
-                </Link>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
