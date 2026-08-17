@@ -19,18 +19,9 @@ export default function AdminCategories() {
   async function fetchCategories() {
     setLoading(true);
     setError('');
-
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
-
-    if (error) {
-      setError('Error loading categories: ' + error.message);
-    } else {
-      setCategories(data || []);
-    }
-
+    const { data, error } = await supabase.from('categories').select('*').order('name');
+    if (error) setError('Error: ' + error.message);
+    else setCategories(data || []);
     setLoading(false);
   }
 
@@ -50,152 +41,76 @@ export default function AdminCategories() {
     e.preventDefault();
     setError('');
     setSaving(true);
-
-    let slug = name
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\u0600-\u06FF-]/g, '');
-
-    if (!slug) {
-      slug = 'category-' + Date.now().toString(36);
-    }
+    let slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\u0600-\u06FF-]/g, '');
+    if (!slug) slug = 'category-' + Date.now().toString(36);
 
     try {
-      const { data: existingCategory } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('slug', slug)
-        .single();
-
-      if (
-        existingCategory &&
-        (!editingCategory || existingCategory.id !== editingCategory.id)
-      ) {
-        slug = slug + '-' + Date.now().toString(36);
-      }
-
       if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update({ name, slug })
-          .eq('id', editingCategory.id);
-
-        if (error) throw error;
+        await supabase.from('categories').update({ name, slug }).eq('id', editingCategory.id);
       } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert({ name, slug });
-
-        if (error) throw error;
+        await supabase.from('categories').insert({ name, slug });
       }
-
       setIsModalOpen(false);
       fetchCategories();
     } catch (err) {
-      if (err.message.includes('duplicate key')) {
-        setError('A category with this name already exists');
-      } else {
-        setError('Error saving category: ' + err.message);
-      }
+      setError('Error: ' + err.message);
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(category) {
-    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      return;
-    }
-
-    setError('');
-
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', category.id);
-
-    if (error) {
-      setError('Error deleting category: ' + error.message);
-    } else {
-      fetchCategories();
-    }
+    if (!confirm(`Delete "${category.name}"?`)) return;
+    await supabase.from('categories').delete().eq('id', category.id);
+    fetchCategories();
   }
 
   return (
     <AdminLayout title="Categories">
-      <div className="flex items-center justify-between mb-4 md:mb-6">
-        <p className="text-gray-600 text-sm hidden md:block">Manage your product categories</p>
-        <button
-          onClick={handleAdd}
-          className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm w-full md:w-auto"
-        >
-          + Add Category
+      <div className="flex justify-end mb-4">
+        <button onClick={handleAdd} className="bg-black text-white px-4 py-2 rounded-full text-xs tracking-widest hover:bg-gray-800 transition">
+          + ADD CATEGORY
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg mb-3 text-xs">{error}</div>}
 
       {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Loading categories...</p>
-        </div>
+        <div className="text-center py-8"><p className="text-gray-400 text-sm">Loading...</p></div>
       ) : categories.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <p className="text-gray-500">No categories yet.</p>
-        </div>
+        <div className="text-center py-8 border border-gray-100 rounded-xl"><p className="text-gray-400 text-sm">No categories.</p></div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table className="w-full min-w-[500px]">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-800 font-medium text-sm">{category.name}</td>
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-600 text-sm">{category.slug}</td>
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-600 text-sm">
-                    {new Date(category.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 md:px-6 py-3 md:py-4 text-right">
-                    <button onClick={() => handleEdit(category)} className="text-blue-600 hover:text-blue-800 mr-3 text-sm">Edit</button>
-                    <button onClick={() => handleDelete(category)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {categories.map((category) => (
+            <div key={category.id} className="border border-gray-100 rounded-xl p-3 flex items-center justify-between hover:border-black transition">
+              <div>
+                <p className="text-sm font-medium text-black">{category.name}</p>
+                <p className="text-xs text-gray-400">{category.slug}</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => handleEdit(category)} className="text-xs text-gray-600 hover:text-black">Edit</button>
+                <button onClick={() => handleDelete(category)} className="text-xs text-red-600 hover:text-red-800">Delete</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingCategory ? 'Edit Category' : 'Add Category'}>
-        <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              placeholder="Necklaces"
-            />
-          </div>
-          <div className="flex gap-3">
-            <button type="submit" disabled={saving} className="flex-1 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm">
+        <form onSubmit={handleSave} className="space-y-3">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Category Name"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-black"
+          />
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className="flex-1 bg-black text-white py-2.5 rounded-full text-xs tracking-widest hover:bg-gray-800 transition disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition text-sm">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 border border-gray-200 py-2.5 rounded-full text-xs tracking-widest hover:border-black transition">
               Cancel
             </button>
           </div>
