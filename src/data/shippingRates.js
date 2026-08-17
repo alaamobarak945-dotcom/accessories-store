@@ -30,7 +30,7 @@ export const shippingRates = [
   { governorate: 'شمال سيناء', fee: 200 },
 ];
 
-export const baseWeight = 2; // كيلو
-export const extraWeightFee = 10; // جنيه لكل كيلو زيادة
-export const vodafoneCashNumber = '01000000000'; // رقم المحفظة
-export const whatsappNumber = '201000000000'; // رقم واتساب
+export const baseWeight = 2;
+export const extraWeightFee = 10;
+export const vodafoneCashNumber = '01040908007';
+export const whatsappNumber = '201040908007';
