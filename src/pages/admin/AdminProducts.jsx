@@ -30,43 +30,24 @@ export default function AdminProducts() {
   async function fetchProducts() {
     setLoading(true);
     setError('');
-
     const { data, error } = await supabase
       .from('products')
-      .select(`
-        *,
-        categories (id, name),
-        product_images (id, image_url, is_primary, created_at)
-      `)
+      .select(`*, categories (id, name), product_images (id, image_url, is_primary)`)
       .order('created_at', { ascending: false });
-
-    if (error) {
-      setError('Error loading products: ' + error.message);
-    } else {
-      setProducts(data || []);
-    }
-
+    if (error) setError('Error loading products: ' + error.message);
+    else setProducts(data || []);
     setLoading(false);
   }
 
   async function fetchCategories() {
-    const { data } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
-
+    const { data } = await supabase.from('categories').select('*').order('name');
     setCategories(data || []);
   }
 
   function handleAdd() {
     setEditingProduct(null);
-    setName('');
-    setDescription('');
-    setPrice('');
-    setStock('');
-    setCategoryId('');
-    setIsActive(true);
-    setImages([]);
+    setName(''); setDescription(''); setPrice(''); setStock(''); setCategoryId('');
+    setIsActive(true); setImages([]);
     setIsModalOpen(true);
   }
 
@@ -78,13 +59,7 @@ export default function AdminProducts() {
     setStock(product.stock.toString());
     setCategoryId(product.category_id || '');
     setIsActive(product.is_active);
-    
-    const sortedImages = [...(product.product_images || [])].sort((a, b) => {
-      if (a.is_primary && !b.is_primary) return -1;
-      if (!a.is_primary && b.is_primary) return 1;
-      return 0;
-    });
-    
+    const sortedImages = [...(product.product_images || [])].sort((a, b) => (a.is_primary ? -1 : 1));
     setImages(sortedImages);
     setIsModalOpen(true);
   }
@@ -92,84 +67,37 @@ export default function AdminProducts() {
   async function handleUploadImages(files) {
     setUploading(true);
     setError('');
-
     const uploadedUrls = [];
-
     for (const file of files) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file);
-
-      if (error) {
-        setError('Error uploading image: ' + error.message);
-        setUploading(false);
-        return;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      uploadedUrls.push({
-        image_url: urlData.publicUrl,
-        is_primary: images.length === 0 && uploadedUrls.length === 0,
-      });
+      const { error } = await supabase.storage.from('product-images').upload(fileName, file);
+      if (error) { setError('Error uploading: ' + error.message); setUploading(false); return; }
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName);
+      uploadedUrls.push({ image_url: urlData.publicUrl, is_primary: images.length === 0 && uploadedUrls.length === 0 });
     }
-
     setImages([...images, ...uploadedUrls]);
     setUploading(false);
   }
 
   function handleSetPrimary(index) {
-    const updatedImages = images.map((img, i) => ({
-      ...img,
-      is_primary: i === index,
-    }));
-    setImages(updatedImages);
+    setImages(images.map((img, i) => ({ ...img, is_primary: i === index })));
   }
 
   function handleRemoveImage(index) {
-    const updatedImages = images.filter((_, i) => i !== index);
-
-    if (updatedImages.length > 0 && !updatedImages.some((img) => img.is_primary)) {
-      updatedImages[0].is_primary = true;
-    }
-
-    setImages(updatedImages);
-  }
-
-  function handleMoveImage(index, direction) {
-    const newImages = [...images];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= newImages.length) return;
-
-    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
-
-    newImages.forEach((img, i) => {
-      img.is_primary = i === 0;
-    });
-
-    setImages(newImages);
+    const updated = images.filter((_, i) => i !== index);
+    if (updated.length > 0 && !updated.some((img) => img.is_primary)) updated[0].is_primary = true;
+    setImages(updated);
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setError('');
     setSaving(true);
-
     try {
-      if (!name || !price || !stock) {
-        throw new Error('Name, price, and stock are required');
-      }
-
+      if (!name || !price || !stock) throw new Error('Name, price, and stock are required');
       const productData = {
-        name,
-        description,
+        name, description,
         price: parseFloat(price),
         stock: parseInt(stock),
         category_id: categoryId || null,
@@ -177,214 +105,96 @@ export default function AdminProducts() {
       };
 
       if (editingProduct) {
-        const { error: productError } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', editingProduct.id);
-
-        if (productError) throw productError;
-
-        const { error: deleteError } = await supabase
-          .from('product_images')
-          .delete()
-          .eq('product_id', editingProduct.id);
-
-        if (deleteError) throw deleteError;
-
+        await supabase.from('products').update(productData).eq('id', editingProduct.id);
+        await supabase.from('product_images').delete().eq('product_id', editingProduct.id);
         if (images.length > 0) {
-          const imageInserts = images.map((img, index) => ({
-            product_id: editingProduct.id,
-            image_url: img.image_url,
-            is_primary: index === 0,
-          }));
-
-          const { error: imageError } = await supabase
-            .from('product_images')
-            .insert(imageInserts);
-
-          if (imageError) throw imageError;
+          await supabase.from('product_images').insert(images.map((img, index) => ({
+            product_id: editingProduct.id, image_url: img.image_url, is_primary: index === 0,
+          })));
         }
       } else {
-        const { data: newProduct, error: productError } = await supabase
-          .from('products')
-          .insert(productData)
-          .select()
-          .single();
-
-        if (productError) throw productError;
-
+        const { data: newProduct, error } = await supabase.from('products').insert(productData).select().single();
+        if (error) throw error;
         if (images.length > 0) {
-          const imageInserts = images.map((img, index) => ({
-            product_id: newProduct.id,
-            image_url: img.image_url,
-            is_primary: index === 0,
-          }));
-
-          const { error: imageError } = await supabase
-            .from('product_images')
-            .insert(imageInserts);
-
-          if (imageError) throw imageError;
+          await supabase.from('product_images').insert(images.map((img, index) => ({
+            product_id: newProduct.id, image_url: img.image_url, is_primary: index === 0,
+          })));
         }
       }
-
       setIsModalOpen(false);
       fetchProducts();
     } catch (err) {
-      setError('Error saving product: ' + err.message);
+      setError('Error saving: ' + err.message);
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete(product) {
-    if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      return;
-    }
-
-    setError('');
-
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', product.id);
-
+    if (!confirm(`Delete "${product.name}"?`)) return;
+    const { error } = await supabase.from('products').delete().eq('id', product.id);
     if (error) {
-      if (error.message.includes('violates foreign key')) {
-        setError('Cannot delete this product because it is linked to active orders. Wait until orders are delivered or cancelled.');
-      } else {
-        setError('Error deleting product: ' + error.message);
-      }
-    } else {
-      fetchProducts();
-    }
+      if (error.message.includes('violates foreign key')) setError('Cannot delete: linked to orders.');
+      else setError('Error deleting: ' + error.message);
+    } else fetchProducts();
   }
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <AdminLayout title="Products">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-3">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search products..."
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-64 focus:outline-none text-sm"
         />
-        <button
-          onClick={handleAdd}
-          className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
-        >
+        <button onClick={handleAdd} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm w-full md:w-auto">
           + Add Product
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>}
 
       {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Loading products...</p>
-        </div>
+        <div className="text-center py-12"><p className="text-gray-500">Loading products...</p></div>
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <p className="text-gray-500">No products found.</p>
-        </div>
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm"><p className="text-gray-500">No products found.</p></div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Images
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
                       {product.product_images?.[0]?.image_url && (
-                        <img
-                          src={product.product_images[0].image_url}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded"
-                        />
+                        <img src={product.product_images[0].image_url} alt="" className="w-8 h-8 object-cover rounded" />
                       )}
-                      <span className="text-gray-800 font-medium">
-                        {product.name}
-                      </span>
+                      <span className="text-sm font-medium text-gray-800 truncate max-w-[150px]">{product.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {product.categories?.name || '—'}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    ج.م {parseFloat(product.price).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={
-                        product.stock <= 5
-                          ? 'text-red-600 font-medium'
-                          : 'text-gray-600'
-                      }
-                    >
-                      {product.stock}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {product.product_images?.length || 0}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        product.is_active
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
+                  <td className="px-4 py-3 text-sm">ج.م {parseFloat(product.price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm">{product.stock}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded text-[10px] ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
                       {product.is_active ? 'Active' : 'Hidden'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="text-blue-600 hover:text-blue-800 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-800 mr-3 text-sm">Edit</button>
+                    <button onClick={() => handleDelete(product)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
                   </td>
                 </tr>
               ))}
@@ -393,194 +203,40 @@ export default function AdminProducts() {
         </div>
       )}
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingProduct ? 'Edit Product' : 'Add Product'}
-      >
-        <form onSubmit={handleSave} className="space-y-4 max-h-[70vh] overflow-y-auto">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              placeholder="Gold Necklace"
-            />
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingProduct ? 'Edit Product' : 'Add Product'}>
+        <form onSubmit={handleSave} className="space-y-3 max-h-[70vh] overflow-y-auto">
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Product Name" className="w-full border rounded-lg px-3 py-2 text-sm" />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Description" className="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" step="0.01" placeholder="Price" className="border rounded-lg px-3 py-2 text-sm" />
+            <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} required min="0" placeholder="Stock" className="border rounded-lg px-3 py-2 text-sm" />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              placeholder="Product description..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price (ج.م)
-              </label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-                min="0"
-                step="0.01"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="99.00"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stock
-              </label>
-              <input
-                type="number"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                required
-                min="0"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                placeholder="10"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              <option value="">No Category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="">No Category</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+            Active
+          </label>
+          <input type="file" accept="image/*" multiple onChange={(e) => handleUploadImages(e.target.files)} className="text-sm" />
+          {images.length > 0 && (
+            <div className="space-y-1">
+              {images.map((img, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded p-1">
+                  <img src={img.image_url} alt="" className="w-10 h-10 object-cover rounded" />
+                  <span className="text-xs flex-1">{img.is_primary ? 'Main' : `Image ${i + 1}`}</span>
+                  <button type="button" onClick={() => handleSetPrimary(i)} className="text-xs text-blue-600">Set Main</button>
+                  <button type="button" onClick={() => handleRemoveImage(i)} className="text-xs text-red-600">×</button>
+                </div>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm text-gray-700">Active (visible to customers)</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Images
-            </label>
-
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => handleUploadImages(e.target.files)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm mb-2"
-            />
-            {uploading && <p className="text-gray-500 text-sm mb-2">Uploading...</p>}
-
-            {images.length > 0 && (
-              <div className="space-y-2">
-                {images.map((img, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 bg-gray-50 rounded-lg p-2"
-                  >
-                    <img
-                      src={img.image_url}
-                      alt={`Product ${index + 1}`}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-600">
-                        Image {index + 1}
-                        {img.is_primary && (
-                          <span className="ml-2 bg-gray-800 text-white px-2 py-0.5 rounded text-xs">
-                            Main
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleMoveImage(index, 'up')}
-                        disabled={index === 0}
-                        className="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-30"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMoveImage(index, 'down')}
-                        disabled={index === images.length - 1}
-                        className="px-2 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-30"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetPrimary(index)}
-                        className={`px-2 py-1 text-xs ${
-                          img.is_primary
-                            ? 'text-gray-400'
-                            : 'text-blue-600 hover:text-blue-800'
-                        }`}
-                      >
-                        {img.is_primary ? 'Main' : 'Set Main'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="px-2 py-1 text-red-600 hover:text-red-800"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving || uploading}
-              className="flex-1 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Product'}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving || uploading} className="flex-1 bg-gray-800 text-white py-2 rounded-lg text-sm disabled:opacity-50">
+              {saving ? 'Saving...' : 'Save'}
             </button>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition"
-            >
-              Cancel
-            </button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-200 py-2 rounded-lg text-sm">Cancel</button>
           </div>
         </form>
       </Modal>

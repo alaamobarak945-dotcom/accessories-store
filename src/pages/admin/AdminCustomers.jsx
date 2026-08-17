@@ -16,11 +16,9 @@ export default function AdminCustomers() {
     setLoading(true);
     setError('');
 
-    // جلب كل العملاء
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'customer')
       .order('created_at', { ascending: false });
 
     if (profilesError) {
@@ -29,7 +27,6 @@ export default function AdminCustomers() {
       return;
     }
 
-    // جلب الطلبات لكل عميل
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
       .select('user_id, total_amount, status, created_at')
@@ -41,17 +38,12 @@ export default function AdminCustomers() {
       return;
     }
 
-    // تجميع بيانات العملاء
     const customersWithStats = (profilesData || []).map((profile) => {
-      const userOrders = (ordersData || []).filter(
-        (order) => order.user_id === profile.id
-      );
-
+      const userOrders = (ordersData || []).filter((order) => order.user_id === profile.id);
       const totalOrders = userOrders.length;
       const totalSpent = userOrders
         .filter((order) => order.status !== 'cancelled')
         .reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
-
       const lastOrder = userOrders.length > 0 ? userOrders[0] : null;
 
       return {
@@ -85,101 +77,48 @@ export default function AdminCustomers() {
 
   return (
     <AdminLayout title="Customers">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-4 md:mb-6">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search customers by name, email, or phone..."
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-96 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          placeholder="Search customers..."
+          className="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-96 focus:outline-none text-sm"
         />
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
       )}
 
       {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Loading customers...</p>
-        </div>
+        <div className="text-center py-12"><p className="text-gray-500">Loading customers...</p></div>
       ) : filteredCustomers.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <p className="text-gray-500">No customers found.</p>
-        </div>
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm"><p className="text-gray-500">No customers found.</p></div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Phone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Total Orders
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Total Spent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Last Order
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Last Order Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Joined At
-                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Spent</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Order</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-gray-800 font-medium">
-                        {customer.full_name || 'N/A'}
-                      </p>
-                      <p className="text-gray-500 text-sm">{customer.email}</p>
-                    </div>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-gray-800">{customer.full_name || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">{customer.email}</p>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{customer.phone || 'N/A'}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-800 font-medium">
-                      {customer.totalOrders}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-800 font-medium">
-                      ج.م {customer.totalSpent.toFixed(2)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {customer.lastOrderDate
-                      ? new Date(customer.lastOrderDate).toLocaleDateString()
-                      : '—'}
-                  </td>
-                  <td className="px-6 py-4">
-                    {customer.lastOrderStatus ? (
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          statusColors[customer.lastOrderStatus] || 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {customer.lastOrderStatus.charAt(0).toUpperCase() +
-                          customer.lastOrderStatus.slice(1)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Date(customer.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3 text-sm text-gray-600">{customer.phone || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm font-medium">{customer.totalOrders}</td>
+                  <td className="px-4 py-3 text-sm">ج.م {customer.totalSpent.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : '—'}
                   </td>
                 </tr>
               ))}

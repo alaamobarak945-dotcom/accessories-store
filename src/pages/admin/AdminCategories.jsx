@@ -51,20 +51,17 @@ export default function AdminCategories() {
     setError('');
     setSaving(true);
 
-    // توليد slug يدعم العربية
     let slug = name
       .trim()
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9\u0600-\u06FF-]/g, '');
 
-    // إذا كان slug فارغًا (اسم عربي بالكامل)، استخدم معرفًا فريدًا
     if (!slug) {
       slug = 'category-' + Date.now().toString(36);
     }
 
     try {
-      // التحقق من وجود slug مكرر
       const { data: existingCategory } = await supabase
         .from('categories')
         .select('id')
@@ -127,18 +124,18 @@ export default function AdminCategories() {
 
   return (
     <AdminLayout title="Categories">
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-gray-600">Manage your product categories</p>
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <p className="text-gray-600 text-sm hidden md:block">Manage your product categories</p>
         <button
           onClick={handleAdd}
-          className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+          className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm w-full md:w-auto"
         >
           + Add Category
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm">
           {error}
         </div>
       )}
@@ -149,50 +146,30 @@ export default function AdminCategories() {
         </div>
       ) : categories.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <p className="text-gray-500">No categories yet. Add your first category!</p>
+          <p className="text-gray-500">No categories yet.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <table className="w-full min-w-[500px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Created At
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
+                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
+                <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {categories.map((category) => (
                 <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-gray-800 font-medium">
-                    {category.name}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{category.slug}</td>
-                  <td className="px-6 py-4 text-gray-600">
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-800 font-medium text-sm">{category.name}</td>
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-600 text-sm">{category.slug}</td>
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-gray-600 text-sm">
                     {new Date(category.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(category)}
-                      className="text-blue-600 hover:text-blue-800 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(category)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-4 md:px-6 py-3 md:py-4 text-right">
+                    <button onClick={() => handleEdit(category)} className="text-blue-600 hover:text-blue-800 mr-3 text-sm">Edit</button>
+                    <button onClick={() => handleDelete(category)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
                   </td>
                 </tr>
               ))}
@@ -201,16 +178,10 @@ export default function AdminCategories() {
         </div>
       )}
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingCategory ? 'Edit Category' : 'Add Category'}
-      >
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingCategory ? 'Edit Category' : 'Add Category'}>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
             <input
               type="text"
               value={name}
@@ -220,20 +191,11 @@ export default function AdminCategories() {
               placeholder="Necklaces"
             />
           </div>
-
           <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
-            >
+            <button type="submit" disabled={saving} className="flex-1 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50 text-sm">
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition"
-            >
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition text-sm">
               Cancel
             </button>
           </div>
