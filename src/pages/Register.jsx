@@ -37,19 +37,16 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout
-      title="Create Account"
-      subtitle="Register to start shopping"
-    >
+    <AuthLayout title="Create Account" subtitle="Register to start shopping">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Full Name
           </label>
           <input
@@ -57,13 +54,13 @@ export default function Register() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
             placeholder="John Doe"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Phone
           </label>
           <input
@@ -71,13 +68,13 @@ export default function Register() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
-            placeholder="+20 100 000 0000"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
+            placeholder="01000000000"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Email
           </label>
           <input
@@ -85,13 +82,13 @@ export default function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Password
           </label>
           <input
@@ -99,7 +96,7 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
             placeholder="Minimum 6 characters"
           />
         </div>
@@ -107,14 +104,14 @@ export default function Register() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+          className="w-full bg-black text-white py-3 rounded-full text-sm tracking-widest hover:bg-gray-800 transition disabled:opacity-50"
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
         </button>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link to="/login" className="text-gray-800 font-medium hover:underline">
+          <Link to="/login" className="text-black font-medium hover:underline">
             Login
           </Link>
         </p>

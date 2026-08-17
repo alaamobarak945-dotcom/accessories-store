@@ -31,19 +31,19 @@ export default function Login() {
     <AuthLayout title="Welcome Back" subtitle="Login to your account">
       <form onSubmit={handleSubmit} className="space-y-4">
         {location.state?.message && (
-          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm">
+          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-xl text-sm">
             {location.state.message}
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Email
           </label>
           <input
@@ -51,13 +51,13 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs text-gray-600 mb-2 tracking-widest uppercase">
             Password
           </label>
           <input
@@ -65,7 +65,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black transition"
             placeholder="Your password"
           />
         </div>
@@ -73,14 +73,14 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+          className="w-full bg-black text-white py-3 rounded-full text-sm tracking-widest hover:bg-gray-800 transition disabled:opacity-50"
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? 'LOGGING IN...' : 'LOGIN'}
         </button>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-gray-500">
           Don't have an account?{' '}
-          <Link to="/register" className="text-gray-800 font-medium hover:underline">
+          <Link to="/register" className="text-black font-medium hover:underline">
             Register
           </Link>
         </p>
