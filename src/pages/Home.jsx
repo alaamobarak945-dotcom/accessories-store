@@ -32,7 +32,7 @@ export default function Home() {
         product_images (image_url, is_primary)
       `)
       .eq('is_active', true)
-      .limit(8)
+      .limit(10)
       .order('created_at', { ascending: false });
 
     setFeaturedProducts(productsData || []);
@@ -47,7 +47,7 @@ export default function Home() {
     <StoreLayout>
       {/* Hero */}
       <section className="bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-14 text-center">
+        <div className="w-full px-4 md:px-8 py-10 md:py-14 text-center">
           <img
             src="/logo.png"
             alt="M Style"
@@ -70,7 +70,7 @@ export default function Home() {
       </section>
 
       {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+      <section className="w-full px-4 md:px-6 py-8">
         <h2 className="text-xl md:text-2xl font-light text-center mb-4 tracking-tight">
           SHOP BY CATEGORY
         </h2>
@@ -99,7 +99,7 @@ export default function Home() {
 
       {/* Products */}
       <section className="bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <div className="w-full px-4 md:px-6">
           <h2 className="text-xl md:text-2xl font-light text-center mb-6 tracking-tight">
             {selectedCategory === 'all' ? 'FEATURED PRODUCTS' : 'PRODUCTS'}
           </h2>
@@ -110,9 +110,9 @@ export default function Home() {
           ) : filteredProducts.length === 0 ? (
             <p className="text-center text-gray-400 text-sm">No products.</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+              {filteredProducts.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
               ))}
             </div>
           )}

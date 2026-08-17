@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import StoreLayout from '../layouts/StoreLayout';
 import { supabase } from '../lib/supabaseClient';
 import ProductCard from '../components/ProductCard';
@@ -55,13 +55,13 @@ export default function Shop() {
   return (
     <StoreLayout>
       <section className="bg-black text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="max-w-full px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-light tracking-tight">OUR COLLECTION</h1>
           <p className="text-gray-400 text-sm mt-1">Discover premium accessories</p>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <div className="w-full px-4 md:px-6 py-6">
         {/* Categories */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 justify-start md:justify-center">
           <button
@@ -86,7 +86,7 @@ export default function Shop() {
         </div>
 
         {/* Search & Sort */}
-        <div className="flex flex-col md:flex-row gap-3 mb-4 justify-between">
+        <div className="flex flex-col md:flex-row gap-3 mb-4 justify-between max-w-2xl mx-auto md:mx-0">
           <input
             type="text"
             value={searchQuery}
@@ -111,9 +111,9 @@ export default function Shop() {
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-8"><p className="text-gray-400 text-sm">No products found.</p></div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+            {filteredProducts.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
             ))}
           </div>
         )}

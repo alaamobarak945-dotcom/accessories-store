@@ -1,15 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, index = 0 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState('right');
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef(null);
   const images = product.product_images || [];
+
+  useEffect(() => {
+    // Scroll Animation
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) observer.unobserve(cardRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (images.length > 1) {
       const interval = setInterval(() => {
-        setSlideDirection('right');
         setCurrentImageIndex((prev) => (prev + 1) % images.length);
       }, 2500);
 
@@ -18,7 +41,6 @@ export default function ProductCard({ product }) {
   }, [images.length]);
 
   const goToImage = (index) => {
-    setSlideDirection(index > currentImageIndex ? 'right' : 'left');
     setCurrentImageIndex(index);
   };
 
@@ -26,19 +48,25 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
+      ref={cardRef}
       to={`/product/${product.id}`}
-      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+      className={`group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-700 ${
+        isVisible
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-10'
+      }`}
+      style={{ transitionDelay: `${Math.min(index * 100, 500)}ms` }}
     >
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
         {/* Images Container */}
         <div className="relative w-full h-full">
-          {images.map((img, index) => (
+          {images.map((img, idx) => (
             <div
-              key={index}
+              key={idx}
               className={`absolute inset-0 transition-transform duration-500 ease-in-out ${
-                index === currentImageIndex
+                idx === currentImageIndex
                   ? 'translate-x-0 opacity-100'
-                  : index < currentImageIndex
+                  : idx < currentImageIndex
                   ? '-translate-x-full opacity-0'
                   : 'translate-x-full opacity-0'
               }`}
@@ -47,9 +75,7 @@ export default function ProductCard({ product }) {
                 src={img.image_url}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
+                onError={(e) => { e.target.style.display = 'none'; }}
               />
             </div>
           ))}
@@ -61,21 +87,15 @@ export default function ProductCard({ product }) {
           )}
         </div>
 
-        {/* Dots Indicator */}
+        {/* Dots */}
         {images.length > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {images.map((_, index) => (
+            {images.map((_, idx) => (
               <button
-                key={index}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  goToImage(index);
-                }}
+                key={idx}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToImage(idx); }}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentImageIndex
-                    ? 'w-5 bg-black'
-                    : 'w-1.5 bg-gray-300 hover:bg-gray-400'
+                  idx === currentImageIndex ? 'w-5 bg-black' : 'w-1.5 bg-gray-300 hover:bg-gray-400'
                 }`}
               ></button>
             ))}
@@ -88,7 +108,6 @@ export default function ProductCard({ product }) {
           </span>
         )}
 
-        {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 z-[5]"></div>
       </div>
 
