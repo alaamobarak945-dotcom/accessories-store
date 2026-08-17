@@ -52,7 +52,15 @@ export default function Checkout() {
       if (orderError) throw orderError;
 
       await clearCart();
-      navigate(`/my-orders?success=1`);
+
+      // رسالة حسب طريقة الدفع
+      if (paymentMethod === 'vodafone_cash') {
+        navigate(`/my-orders?success=1&payment=vodafone`);
+      } else if (paymentMethod === 'cod') {
+        navigate(`/my-orders?success=1&payment=cod`);
+      } else {
+        navigate(`/my-orders?success=1`);
+      }
     } catch (err) {
       setError(err.message || 'Error creating order');
     } finally {
@@ -146,12 +154,13 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Payment */}
+            {/* Payment Method */}
             <div>
               <label className="block text-sm text-gray-700 mb-2 tracking-wide">
                 PAYMENT METHOD
               </label>
               <div className="space-y-2">
+                {/* COD */}
                 <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-black transition">
                   <input
                     type="radio"
@@ -162,10 +171,13 @@ export default function Checkout() {
                   />
                   <div>
                     <p className="text-sm font-medium">Cash on Delivery</p>
-                    <p className="text-xs text-gray-500">Pay when you receive</p>
+                    <p className="text-xs text-gray-500">
+                      You will be contacted to pay shipping fee as deposit
+                    </p>
                   </div>
                 </label>
 
+                {/* Vodafone Cash */}
                 <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-black transition">
                   <input
                     type="radio"
@@ -176,38 +188,49 @@ export default function Checkout() {
                   />
                   <div>
                     <p className="text-sm font-medium">Vodafone Cash</p>
-                    <p className="text-xs text-gray-500">Transfer to: {vodafoneCashNumber}</p>
+                    <p className="text-xs text-gray-500">
+                      Transfer to: {vodafoneCashNumber}
+                    </p>
                   </div>
                 </label>
 
                 {paymentMethod === 'vodafone_cash' && (
-                  <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-sm text-gray-700 mb-2">
+                      Please transfer the full order amount ({finalTotal.toFixed(2)} EGP) to:
+                    </p>
+                    <p className="text-lg font-bold text-black mb-3">
+                      {vodafoneCashNumber}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      After transfer, send a screenshot on WhatsApp to confirm your order.
+                    </p>
                     <a
                       href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-                        `New order - Total: ${finalTotal.toFixed(2)} EGP`
+                        `New order - Total: ${finalTotal.toFixed(2)} EGP - Name: ${profile?.full_name || ''} - Phone: ${shippingPhone}`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block bg-green-500 text-white px-4 py-2 rounded-full text-xs hover:bg-green-600 transition"
+                      className="inline-block bg-green-500 text-white px-5 py-2 rounded-full text-xs hover:bg-green-600 transition"
                     >
-                      Send on WhatsApp
+                      Send Transfer Screenshot
                     </a>
                   </div>
                 )}
 
-                <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-black transition">
+                {/* Visa - Disabled */}
+                <div className="flex items-center gap-3 p-3 border border-gray-100 rounded-xl opacity-50 cursor-not-allowed">
                   <input
                     type="radio"
                     value="visa"
-                    checked={paymentMethod === 'visa'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    disabled
                     className="accent-black"
                   />
                   <div>
                     <p className="text-sm font-medium">Visa / Mastercard</p>
-                    <p className="text-xs text-gray-500">Pay securely online</p>
+                    <p className="text-xs text-gray-400">Coming Soon</p>
                   </div>
-                </label>
+                </div>
               </div>
             </div>
 
@@ -223,7 +246,7 @@ export default function Checkout() {
           {/* Summary */}
           <div className="bg-gray-50 rounded-xl p-4 h-fit">
             <h2 className="text-lg font-light mb-3 tracking-tight">ORDER SUMMARY</h2>
-            
+
             <div className="space-y-2 mb-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Items</span>
