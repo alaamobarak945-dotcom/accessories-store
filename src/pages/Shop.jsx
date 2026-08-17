@@ -57,13 +57,14 @@ export default function Shop() {
   return (
     <StoreLayout>
       <section className="bg-black text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="w-full px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-light tracking-tight">{t('ourCollection')}</h1>
           <p className="text-gray-400 text-sm mt-1">{t('discoverPremium')}</p>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <div className="w-full px-3 md:px-5 py-5">
+        {/* Categories */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 justify-start md:justify-center">
           <button
             onClick={() => setSelectedCategory('all')}
@@ -86,6 +87,7 @@ export default function Shop() {
           ))}
         </div>
 
+        {/* Search & Sort */}
         <div className="flex flex-col md:flex-row gap-3 mb-4 justify-between">
           <input
             type="text"
@@ -111,7 +113,7 @@ export default function Shop() {
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-8"><p className="text-gray-400 text-sm">{t('noProductsFound')}</p></div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3">
             {filteredProducts.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}
