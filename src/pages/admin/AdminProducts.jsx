@@ -20,6 +20,7 @@ export default function AdminProducts() {
   const [stock, setStock] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [hasColors, setHasColors] = useState(false);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
 
@@ -48,7 +49,7 @@ export default function AdminProducts() {
   function handleAdd() {
     setEditingProduct(null);
     setName(''); setDescription(''); setSpecifications(''); setPrice(''); setStock(''); setCategoryId('');
-    setIsActive(true); setImages([]);
+    setIsActive(true); setHasColors(false); setImages([]);
     setIsModalOpen(true);
   }
 
@@ -61,6 +62,7 @@ export default function AdminProducts() {
     setStock(product.stock.toString());
     setCategoryId(product.category_id || '');
     setIsActive(product.is_active);
+    setHasColors(product.has_colors || false);
     const sortedImages = [...(product.product_images || [])].sort((a, b) => (a.is_primary ? -1 : 1));
     setImages(sortedImages);
     setIsModalOpen(true);
@@ -106,6 +108,7 @@ export default function AdminProducts() {
         stock: parseInt(stock),
         category_id: categoryId || null,
         is_active: isActive,
+        has_colors: hasColors,
       };
 
       if (editingProduct) {
@@ -155,8 +158,8 @@ export default function AdminProducts() {
           placeholder="Search..."
           className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none"
         />
-        <button onClick={handleAdd} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
-          + Add Product
+        <button onClick={handleAdd} className="bg-black text-white px-4 py-2 rounded-full text-xs tracking-widest hover:bg-gray-800 transition w-full md:w-auto">
+          + ADD PRODUCT
         </button>
       </div>
 
@@ -169,7 +172,7 @@ export default function AdminProducts() {
       ) : (
         <div className="space-y-2">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3">
+            <div key={product.id} className="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3 border border-gray-100">
               <div className="w-12 h-12 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
                 {product.product_images?.[0]?.image_url ? (
                   <img src={product.product_images[0].image_url} alt="" className="w-full h-full object-cover" />
@@ -180,9 +183,14 @@ export default function AdminProducts() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
                 <p className="text-xs text-gray-500">ج.م {parseFloat(product.price).toFixed(2)} · Stock: {product.stock}</p>
-                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                  {product.is_active ? 'Active' : 'Hidden'}
-                </span>
+                <div className="flex gap-1 mt-1">
+                  <span className={`px-2 py-0.5 rounded text-[10px] ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                    {product.is_active ? 'Active' : 'Hidden'}
+                  </span>
+                  {product.has_colors && (
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700">Has Colors</span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <button onClick={() => handleEdit(product)} className="text-blue-600 text-xs">Edit</button>
@@ -199,12 +207,12 @@ export default function AdminProducts() {
           
           <div>
             <label className="block text-xs text-gray-600 mb-1">Description</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder={"Product description...\n- First line\n- Second line"} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder={"Product description..."} className="w-full border rounded-lg px-3 py-2 text-sm" />
           </div>
 
           <div>
             <label className="block text-xs text-gray-600 mb-1">Specifications</label>
-            <textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={4} placeholder={"- Material: Gold\n- Size: 18 inch\n- Color: Silver\n- Weight: 50g"} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            <textarea value={specifications} onChange={(e) => setSpecifications(e.target.value)} rows={4} placeholder={"- Material: Gold\n- Size: 18 inch\n- Color: Silver"} className="w-full border rounded-lg px-3 py-2 text-sm" />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -221,6 +229,17 @@ export default function AdminProducts() {
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
             Active
           </label>
+
+          {/* Has Colors Toggle */}
+          <div className="border border-gray-200 rounded-lg p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" checked={hasColors} onChange={(e) => setHasColors(e.target.checked)} />
+              This product has color options
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              If enabled, customers can choose a color when ordering.
+            </p>
+          </div>
           
           <input type="file" accept="image/*" multiple onChange={(e) => handleUploadImages(e.target.files)} className="text-sm" />
           
@@ -238,10 +257,10 @@ export default function AdminProducts() {
           )}
           
           <div className="flex gap-2">
-            <button type="submit" disabled={saving || uploading} className="flex-1 bg-gray-800 text-white py-2 rounded-lg text-sm disabled:opacity-50">
+            <button type="submit" disabled={saving || uploading} className="flex-1 bg-black text-white py-2 rounded-full text-xs tracking-widest disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-200 py-2 rounded-lg text-sm">Cancel</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 border border-gray-300 py-2 rounded-full text-xs">Cancel</button>
           </div>
         </form>
       </Modal>
